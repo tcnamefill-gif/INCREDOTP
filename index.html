@@ -41,6 +41,7 @@
             background: rgba(0,0,0,0.3);
             border-bottom: 1px solid rgba(255,255,255,0.1);
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .filter-btn {
@@ -62,6 +63,39 @@
 
         .filter-btn:hover {
             background: rgba(59,130,246,0.3);
+        }
+
+        .search-box {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 12px;
+            border-radius: 40px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 8px 8px;
+            font-size: 0.85rem;
+            outline: none;
+            width: 180px;
+        }
+
+        .search-box input::placeholder {
+            color: #94a3b8;
+        }
+
+        .search-box button {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1.1rem;
         }
 
         .device-list {
@@ -210,9 +244,48 @@
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             font-size: 0.7rem;
             color: #94a3b8;
+        }
+
+        .otp-device-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            color: #e2e8f0;
+        }
+
+        .device-name-badge {
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .device-number-copy {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #334155;
+            padding: 2px 8px;
+            border-radius: 30px;
+        }
+
+        .copy-number-small {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: #cbd5e1;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            cursor: pointer;
+        }
+
+        .copy-number-small:hover {
+            background: #3b82f6;
+            color: white;
         }
 
         .otp-sender {
@@ -247,6 +320,17 @@
             .device-list {
                 grid-template-columns: 1fr;
             }
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-box {
+                margin-left: 0;
+                width: 100%;
+            }
+            .search-box input {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -258,6 +342,11 @@
             <button class="filter-btn active" data-filter="all">📱 ALL NUMBER</button>
             <button class="filter-btn" data-filter="online">🟢 ONLINE NUMBER</button>
             <button class="filter-btn" data-filter="offline">🔴 OFFLINE NUMBER</button>
+            <div class="search-box">
+                <input type="text" id="searchNumberInput" placeholder="🔍 Search by 10-digit number" maxlength="10">
+                <button id="searchBtn">🔍</button>
+                <button id="clearSearchBtn" style="display:none;">✖️</button>
+            </div>
         </div>
         <div id="deviceList" class="device-list">
             <div class="empty-mailbox">Loading devices...</div>
@@ -305,6 +394,7 @@
     let allReceivedOtps = [];
     let processedMsgIds = new Set();
     let currentFilter = "all";
+    let currentSearchNumber = "";
 
     // ---------- MASTER DEVICE LIST (exactly as provided) ----------
     const masterDevices = [
@@ -389,10 +479,11 @@
         { name: "Anclucis's S25 Ultra", sim1: "8415098076", sim2: null }
     ];
 
-    // Build name-to-status map from Firebase (online/offline)
-    let statusMap = {}; // name -> status
+    // Maps built from Firebase
+    let didToDeviceMap = {};      // did -> { name, status, sim1, sim2 }
+    let nameToStatusMap = {};     // device name -> status (from Info)
 
-    // Helper: clean phone number (just in case we need fallback)
+    // Helper: clean phone number to 10 digits
     function cleanPhoneNumber(simValue) {
         if (!simValue || typeof simValue !== 'string') return null;
         const digitsOnly = simValue.replace(/\D/g, '');
@@ -471,11 +562,9 @@
     // Extract all SMS messages from the entire Firebase structure
     function extractAllSmsMessages(data) {
         const messages = [];
-        // Recursively look for objects with "Sms" key
         function traverse(obj, path = "") {
             if (!obj || typeof obj !== 'object') return;
             if (obj.Sms && typeof obj.Sms === 'object') {
-                // Found Sms node
                 for (const did in obj.Sms) {
                     const deviceSms = obj.Sms[did];
                     if (deviceSms && typeof deviceSms === 'object') {
@@ -484,14 +573,14 @@
                             if (msg && msg.msg) {
                                 messages.push({
                                     ...msg,
-                                    did: did
+                                    did: did,
+                                    msgId: msgId
                                 });
                             }
                         }
                     }
                 }
             }
-            // Recurse deeper
             for (const key in obj) {
                 if (obj[key] && typeof obj[key] === 'object') {
                     traverse(obj[key], `${path}/${key}`);
@@ -502,16 +591,36 @@
         return messages;
     }
 
-    // Extract device status from Firebase (Info nodes)
-    function extractDeviceStatus(data) {
-        const status = {};
+    // Extract device info (Info and SimINFO) from Firebase, mapping by the actual did
+    function extractDeviceInfo(data) {
+        const didMap = {};
+        const nameStatus = {};
+
         function traverse(obj) {
             if (!obj || typeof obj !== 'object') return;
+            // Look for Info node
             if (obj.Info && typeof obj.Info === 'object') {
-                for (const did in obj.Info) {
-                    const dev = obj.Info[did];
-                    if (dev && dev.Name) {
-                        status[dev.Name] = dev.status || "Offline";
+                for (const key in obj.Info) {
+                    const device = obj.Info[key];
+                    if (device && device.did) {
+                        const did = device.did;
+                        const name = device.Name || "Unknown";
+                        const status = device.status || "Offline";
+                        didMap[did] = didMap[did] || { name, status, sim1: null, sim2: null };
+                        didMap[did].name = name;
+                        didMap[did].status = status;
+                        nameStatus[name] = status;
+                    }
+                }
+            }
+            // Look for SimINFO node
+            if (obj.SimINFO && typeof obj.SimINFO === 'object') {
+                for (const did in obj.SimINFO) {
+                    const sim = obj.SimINFO[did];
+                    if (sim) {
+                        didMap[did] = didMap[did] || { name: "Unknown", status: "Offline", sim1: null, sim2: null };
+                        didMap[did].sim1 = cleanPhoneNumber(sim.sim1);
+                        didMap[did].sim2 = cleanPhoneNumber(sim.sim2);
                     }
                 }
             }
@@ -522,40 +631,35 @@
             }
         }
         traverse(data);
-        return status;
+        return { didMap, nameStatus };
     }
 
-    // Update status map from Firebase
-    async function updateStatusMap() {
-        try {
-            const data = await fetchAllFirebaseData();
-            statusMap = extractDeviceStatus(data);
-            renderDeviceList(); // re-render when status updates
-        } catch (err) {
-            console.error("Error fetching status:", err);
-        }
-    }
-
-    // Render device list based on current filter (using masterDevices)
+    // Render device list based on current filter and search
     function renderDeviceList() {
-        const container = document.getElementById('deviceList');
         let filtered = [...masterDevices];
         
+        // Apply status filter
         if (currentFilter === "online") {
-            filtered = filtered.filter(dev => statusMap[dev.name] === "Online");
+            filtered = filtered.filter(dev => nameToStatusMap[dev.name] === "Online");
         } else if (currentFilter === "offline") {
-            filtered = filtered.filter(dev => statusMap[dev.name] !== "Online");
+            filtered = filtered.filter(dev => nameToStatusMap[dev.name] !== "Online");
         }
-        // "all" keeps all
-
+        
+        // Apply search filter
+        if (currentSearchNumber.trim() !== "") {
+            const searchNum = currentSearchNumber.trim();
+            filtered = filtered.filter(dev => dev.sim1 === searchNum || dev.sim2 === searchNum);
+        }
+        
+        const container = document.getElementById('deviceList');
         if (filtered.length === 0) {
             container.innerHTML = `<div class="empty-mailbox">No devices found for this filter.</div>`;
             return;
         }
-
+        
         container.innerHTML = '';
         filtered.forEach((dev, idx) => {
-            const status = statusMap[dev.name] || "Offline";
+            const status = nameToStatusMap[dev.name] || "Offline";
             const card = document.createElement('div');
             card.className = 'device-card';
             card.innerHTML = `
@@ -603,6 +707,52 @@
         renderMailbox();
     }
 
+    // Create an OTP card (for mailbox and history)
+    function createOtpCard(otp, isHistory = false) {
+        const card = document.createElement('div');
+        card.className = 'otp-card';
+        const otpCode = extractOtpCode(otp.text);
+        const displayNumber = otp.deviceNumber;
+        
+        card.innerHTML = `
+            <div class="otp-header">
+                <span>🕒 ${otp.timeFormatted}</span>
+                <span class="otp-sender">✉️ ${escapeHtml(otp.sender)}</span>
+            </div>
+            <div class="otp-device-row">
+                <span class="device-name-badge">📱 ${escapeHtml(otp.deviceName || 'Unknown')}</span>
+                ${displayNumber ? `
+                    <span class="device-number-copy">
+                        📞 ${displayNumber}
+                        <button class="copy-number-small" data-number="${displayNumber}">📋 Copy</button>
+                    </span>
+                ` : '<span>📞 No number</span>'}
+            </div>
+            <div class="otp-text">${escapeHtml(otp.text)}</div>
+            <div style="margin-top: 8px; text-align: right;">
+                <button class="copy-otp-btn" data-otp="${otpCode || ''}" data-fullmsg="${escapeHtml(otp.text)}">📋 Copy OTP</button>
+            </div>
+        `;
+        
+        const copyNumBtn = card.querySelector('.copy-number-small');
+        if (copyNumBtn) {
+            copyNumBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                copyNumber(copyNumBtn.getAttribute('data-number'));
+            });
+        }
+        
+        const copyOtpBtn = card.querySelector('.copy-otp-btn');
+        copyOtpBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const otpVal = copyOtpBtn.getAttribute('data-otp');
+            const fullMsg = copyOtpBtn.getAttribute('data-fullmsg');
+            copyOtp(otpVal, fullMsg);
+        });
+        
+        return card;
+    }
+
     // Render mailbox (all OTPs, newest first)
     function renderMailbox() {
         const container = document.getElementById('mailboxMessages');
@@ -613,26 +763,7 @@
         const sorted = [...allReceivedOtps].sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
         container.innerHTML = '';
         for (const otp of sorted) {
-            const card = document.createElement('div');
-            card.className = 'otp-card';
-            const otpCode = extractOtpCode(otp.text);
-            card.innerHTML = `
-                <div class="otp-header">
-                    <span>🕒 ${otp.timeFormatted}</span>
-                    <span class="otp-sender">✉️ ${escapeHtml(otp.sender)}</span>
-                    <span>📱 ${otp.deviceNumber || 'Unknown'}</span>
-                    <button class="copy-otp-btn" data-otp="${otpCode || ''}" data-fullmsg="${escapeHtml(otp.text)}">📋 Copy OTP</button>
-                </div>
-                <div class="otp-text">${escapeHtml(otp.text)}</div>
-            `;
-            const copyBtn = card.querySelector('.copy-otp-btn');
-            copyBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const otp = copyBtn.getAttribute('data-otp');
-                const full = copyBtn.getAttribute('data-fullmsg');
-                copyOtp(otp, full);
-            });
-            container.appendChild(card);
+            container.appendChild(createOtpCard(otp, false));
         }
     }
 
@@ -647,34 +778,41 @@
             const data = await fetchAllFirebaseData();
             const allMessages = extractAllSmsMessages(data);
             
-            // Also update status map while we're at it
-            statusMap = extractDeviceStatus(data);
-            renderDeviceList();
+            // Extract device info (did -> name, number, status)
+            const { didMap, nameStatus } = extractDeviceInfo(data);
+            didToDeviceMap = didMap;
+            nameToStatusMap = nameStatus;
+            renderDeviceList(); // update device list with latest status
 
             const newMessages = [];
             for (const msg of allMessages) {
-                const uniqueKey = `${msg.did}_${msg.msgId || Math.random()}`; // we need a unique identifier
-                // Since messages may not have a fixed ID, we use a hash of the message content + timestamp as fallback
-                let msgKey = `${msg.did}_${msg.msg}_${msg.date}`;
-                if (msg.msgId) msgKey = `${msg.did}_${msg.msgId}`;
-                
+                const msgKey = `${msg.did}_${msg.msg}_${msg.date}`;
                 if (!processedMsgIds.has(msgKey) && isDesiredOtp(msg)) {
                     processedMsgIds.add(msgKey);
-                    // Find device number from master list
-                    const deviceInfo = masterDevices.find(d => d.name === (msg.deviceName || "Unknown"));
-                    const deviceNumber = deviceInfo ? (deviceInfo.sim1 || deviceInfo.sim2) : null;
+                    
+                    // Look up device info by did
+                    const deviceInfo = didToDeviceMap[msg.did] || { name: "Unknown", sim1: null, sim2: null };
+                    let deviceName = deviceInfo.name;
+                    let deviceNumber = deviceInfo.sim1 || deviceInfo.sim2;
+                    
+                    // If no number found from SimINFO, try master list by name
+                    if (!deviceNumber) {
+                        const masterDev = masterDevices.find(d => d.name === deviceName);
+                        if (masterDev) deviceNumber = masterDev.sim1 || masterDev.sim2;
+                    }
+                    
                     const otpObj = {
                         text: msg.msg,
                         timestamp: msg.date || Date.now(),
                         timeFormatted: formatTime(msg.date || Date.now()),
                         sender: msg.ph || "Unknown",
-                        deviceName: msg.deviceName || "Unknown",
+                        deviceName: deviceName,
                         deviceNumber: deviceNumber,
                         did: msg.did
                     };
                     newMessages.push(otpObj);
                     allReceivedOtps.push(otpObj);
-                    console.log(`📩 New OTP: ${msg.msg.substring(0, 60)}`);
+                    console.log(`📩 New OTP from ${deviceName} (${deviceNumber}): ${msg.msg.substring(0, 60)}`);
                 }
             }
 
@@ -698,8 +836,7 @@
             const allMessages = extractAllSmsMessages(data);
             for (const msg of allMessages) {
                 if (isDesiredOtp(msg)) {
-                    let msgKey = `${msg.did}_${msg.msg}_${msg.date}`;
-                    if (msg.msgId) msgKey = `${msg.did}_${msg.msgId}`;
+                    const msgKey = `${msg.did}_${msg.msg}_${msg.date}`;
                     processedMsgIds.add(msgKey);
                 }
             }
@@ -729,26 +866,8 @@
             historyList.innerHTML = '';
             const sorted = [...allReceivedOtps].sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
             for (const otp of sorted) {
-                const card = document.createElement('div');
-                card.className = 'otp-card';
+                const card = createOtpCard(otp, true);
                 card.style.marginBottom = '8px';
-                const otpCode = extractOtpCode(otp.text);
-                card.innerHTML = `
-                    <div class="otp-header">
-                        <span>🕒 ${otp.timeFormatted}</span>
-                        <span class="otp-sender">✉️ ${escapeHtml(otp.sender)}</span>
-                        <span>📱 ${otp.deviceNumber || 'Unknown'}</span>
-                        <button class="copy-otp-btn" data-otp="${otpCode || ''}" data-fullmsg="${escapeHtml(otp.text)}">📋 Copy OTP</button>
-                    </div>
-                    <div class="otp-text">${escapeHtml(otp.text)}</div>
-                `;
-                const copyBtn = card.querySelector('.copy-otp-btn');
-                copyBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const otp = copyBtn.getAttribute('data-otp');
-                    const full = copyBtn.getAttribute('data-fullmsg');
-                    copyOtp(otp, full);
-                });
                 historyList.appendChild(card);
             }
         }
@@ -784,10 +903,30 @@
         renderDeviceList();
     }
 
+    // Search handling
+    function handleSearch() {
+        const input = document.getElementById('searchNumberInput');
+        const searchVal = input.value.trim();
+        if (searchVal.length === 10 && /^\d+$/.test(searchVal)) {
+            currentSearchNumber = searchVal;
+            renderDeviceList();
+        } else if (searchVal === "") {
+            currentSearchNumber = "";
+            renderDeviceList();
+        } else {
+            showToast("Enter a valid 10-digit number");
+        }
+    }
+
     // Initialization
     async function init() {
         loadPersistedData();
-        await updateStatusMap();
+        // Initial fetch to populate maps
+        const data = await fetchAllFirebaseData();
+        const { didMap, nameStatus } = extractDeviceInfo(data);
+        didToDeviceMap = didMap;
+        nameToStatusMap = nameStatus;
+        renderDeviceList();
         await markExistingAsProcessed();
         startPolling();
         attachEventListeners();
@@ -795,7 +934,7 @@
 
     function startPolling() {
         if (pollInterval) clearInterval(pollInterval);
-        pollInterval = setInterval(checkForNewOtps, 2000); // 2 seconds
+        pollInterval = setInterval(checkForNewOtps, 2000);
         setTimeout(checkForNewOtps, 500);
     }
 
@@ -810,6 +949,10 @@
         });
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => setFilter(btn.getAttribute('data-filter')));
+        });
+        document.getElementById('searchBtn').addEventListener('click', handleSearch);
+        document.getElementById('searchNumberInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSearch();
         });
     }
 
