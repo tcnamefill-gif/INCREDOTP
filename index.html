@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Multi OTP Vault | InCred + Rupiyo</title>
+    <title>OTP Vault + Device Manager</title>
     <style>
         * {
             margin: 0;
@@ -15,69 +15,155 @@
         body {
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 24px;
         }
 
-        .mailbox-vault {
-            max-width: 1000px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(12px);
-            border-radius: 2rem;
-            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.3);
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .device-section {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
             border: 1px solid rgba(255,255,255,0.1);
             overflow: hidden;
         }
 
-        .vault-header {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            padding: 1.5rem 2rem;
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            padding: 1rem 1.5rem;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #e2e8f0;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .filter-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        .filter-btn:hover {
+            background: rgba(59,130,246,0.3);
+        }
+
+        .device-list {
+            padding: 1rem;
+            max-height: 500px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 12px;
+        }
+
+        .device-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 1rem;
+            padding: 12px 16px;
+        }
+
+        .device-name {
+            font-weight: 600;
+            color: #f1f5f9;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .device-status {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 30px;
+            background: #334155;
+        }
+        .status-online { background: #10b981; color: white; }
+        .status-offline { background: #6b7280; color: white; }
+
+        .sim-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            margin-top: 6px;
+            gap: 8px;
+        }
+
+        .sim-number {
+            font-family: monospace;
+            background: rgba(0,0,0,0.3);
+            padding: 2px 8px;
+            border-radius: 20px;
+            word-break: break-all;
+        }
+
+        .copy-number-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #94a3b8;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .copy-number-btn:hover {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* Mailbox section */
+        .mailbox-section {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+
+        .mailbox-header {
+            padding: 1rem 1.5rem;
+            background: rgba(0,0,0,0.3);
             border-bottom: 1px solid rgba(255,255,255,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .title-section h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #f0f9ff, #a5f3fc);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: -0.3px;
-        }
-
-        .title-section p {
-            color: #94a3b8;
-            font-size: 0.8rem;
-            margin-top: 0.25rem;
-        }
-
-        .badge-group {
-            display: flex;
             gap: 12px;
-            align-items: center;
         }
 
-        .live-badge {
-            background: #10b981;
+        .mailbox-header h2 {
             color: white;
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 0 8px rgba(16,185,129,0.4);
+            font-size: 1.2rem;
         }
 
-        .clear-btn, .history-btn, .test-btn {
+        .mailbox-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
             color: #f1f5f9;
@@ -89,330 +175,246 @@
             transition: 0.2s;
         }
 
-        .clear-btn:hover, .history-btn:hover, .test-btn:hover {
+        .btn-primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn:hover {
             background: rgba(255,255,255,0.2);
-            border-color: rgba(255,255,255,0.4);
         }
 
         .mailbox-messages {
-            height: 60vh;
+            height: 400px;
             overflow-y: auto;
-            padding: 1.5rem;
+            padding: 1rem;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
-            scroll-behavior: smooth;
-        }
-
-        .mailbox-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-        .mailbox-messages::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-        }
-        .mailbox-messages::-webkit-scrollbar-thumb {
-            background: #3b82f6;
-            border-radius: 10px;
+            gap: 12px;
         }
 
         .otp-card {
             background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 1.5rem;
-            padding: 1rem 1.25rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-            animation: fadeSlideUp 0.25s ease-out;
+            border-left: 4px solid #3b82f6;
+            border-radius: 1rem;
+            padding: 12px;
+            transition: 0.1s;
         }
 
-        .otp-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 20px -12px rgba(0,0,0,0.3);
-            border-color: rgba(59,130,246,0.5);
-        }
-
-        @keyframes fadeSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .card-header {
+        .otp-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
             flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .time-sender {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .otp-time {
+            margin-bottom: 6px;
             font-size: 0.7rem;
             color: #94a3b8;
+        }
+
+        .otp-sender {
+            background: #334155;
+            padding: 2px 8px;
+            border-radius: 20px;
             font-family: monospace;
         }
 
-        .sender-badge {
-            background: rgba(59,130,246,0.2);
-            color: #60a5fa;
-            padding: 2px 10px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            border: 1px solid rgba(59,130,246,0.3);
-        }
-
-        .copy-btn, .copy-number-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: #cbd5e1;
-            font-size: 0.7rem;
-            padding: 5px 12px;
-            border-radius: 40px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: 0.2s;
-            font-weight: 500;
-        }
-
-        .copy-btn:hover, .copy-number-btn:hover {
-            background: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-        }
-
         .otp-text {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #e2e8f0;
-            line-height: 1.5;
             word-break: break-word;
-            margin-top: 6px;
-            padding-right: 1rem;
-        }
-
-        .device-number-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 8px 0 4px 0;
-            font-size: 0.75rem;
-            color: #a5b4fc;
+            margin: 6px 0;
         }
 
         .empty-mailbox {
             text-align: center;
-            padding: 3rem;
-            background: rgba(15,23,42,0.5);
-            border-radius: 2rem;
-            border: 1px dashed rgba(255,255,255,0.2);
-            color: #94a3b8;
-            font-size: 0.9rem;
-        }
-
-        .footer-controls {
-            padding: 1rem 1.5rem;
-            background: rgba(0,0,0,0.2);
-            border-top: 1px solid rgba(255,255,255,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            font-size: 0.7rem;
+            padding: 2rem;
             color: #94a3b8;
         }
 
-        .refresh-btn {
-            background: #3b82f6;
-            border: none;
-            color: white;
-            padding: 6px 20px;
-            border-radius: 40px;
-            font-weight: 500;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: 0.2s;
-        }
-
-        .refresh-btn:hover {
-            background: #2563eb;
-            transform: scale(0.98);
-        }
-
-        .toast-msg {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #10b981;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content {
-            background: #1e293b;
-            border-radius: 1.5rem;
-            width: 90%;
-            max-width: 900px;
-            max-height: 80vh;
-            overflow-y: auto;
-            padding: 1.5rem;
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 20px 35px rgba(0,0,0,0.4);
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .modal-header h3 {
-            color: white;
-            font-size: 1.3rem;
-        }
-        .close-modal {
-            background: none;
-            border: none;
-            color: #94a3b8;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-        .history-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
         .debug-info {
             font-size: 0.7rem;
-            color: #94a3b8;
-            padding: 0.5rem 1.5rem;
+            color: #64748b;
+            padding: 0.5rem 1rem;
             background: rgba(0,0,0,0.2);
             border-top: 1px solid rgba(255,255,255,0.05);
         }
 
-        @media (max-width: 640px) {
-            .vault-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .mailbox-messages {
-                height: 55vh;
+        @media (max-width: 768px) {
+            .device-list {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-<div class="mailbox-vault">
-    <div class="vault-header">
-        <div class="title-section">
-            <h1>🔐 Multi OTP Vault</h1>
-            <p>InCred Money + Rupiyo App · Auto‑refresh every 10s</p>
+<div class="main-container">
+    <!-- Device Section -->
+    <div class="device-section">
+        <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all">📱 ALL NUMBER</button>
+            <button class="filter-btn" data-filter="online">🟢 ONLINE NUMBER</button>
+            <button class="filter-btn" data-filter="offline">🔴 OFFLINE NUMBER</button>
         </div>
-        <div class="badge-group">
-            <div class="live-badge" id="liveBadge">LIVE</div>
-            <button class="test-btn" id="testBtn">🔍 Test Fetch</button>
-            <button class="history-btn" id="historyBtn">📜 History</button>
-            <button class="clear-btn" id="clearMailboxBtn">🗑 Clear all</button>
+        <div id="deviceList" class="device-list">
+            <div class="empty-mailbox">Loading devices...</div>
         </div>
     </div>
 
-    <div class="mailbox-messages" id="mailboxMessages">
-        <div class="empty-mailbox">✨ Waiting for new OTPs...<br>From: <strong>CP-INCMNY-S</strong> (InCred) & <strong>CP-GGMOTP-S</strong> (Rupiyo)</div>
-    </div>
-
-    <div class="debug-info" id="debugInfo">
-        ⏱️ Last check: --:--:-- | Click "Test Fetch" to manually check
-    </div>
-
-    <div class="footer-controls">
-        <span>🔄 Auto‑check every 10 seconds · Only new messages</span>
-        <button class="refresh-btn" id="manualRefreshBtn">⟳ Check now</button>
+    <!-- Mailbox Section -->
+    <div class="mailbox-section">
+        <div class="mailbox-header">
+            <h2>📬 OTP MAILBOX</h2>
+            <div class="mailbox-buttons">
+                <button id="historyBtn" class="btn">📜 History</button>
+                <button id="clearMailboxBtn" class="btn">🗑 Clear mailbox</button>
+                <button id="refreshNowBtn" class="btn btn-primary">⟳ Check now</button>
+            </div>
+        </div>
+        <div id="mailboxMessages" class="mailbox-messages">
+            <div class="empty-mailbox">✨ Waiting for OTPs...</div>
+        </div>
+        <div id="debugInfo" class="debug-info">
+            ⏱️ Last check: --:--:-- | Auto‑refresh every 10s
+        </div>
     </div>
 </div>
 
-<div id="toast" class="toast-msg">Copied!</div>
-
 <!-- History Modal -->
-<div id="historyModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>📜 OTP History (since page load)</h3>
-            <button class="close-modal" id="closeModalBtn">&times;</button>
+<div id="historyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#1e293b; border-radius:1.5rem; width:90%; max-width:800px; max-height:80vh; overflow-y:auto; padding:1.5rem;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+            <h3 style="color:white;">📜 OTP History (all time)</h3>
+            <button id="closeModalBtn" style="background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer;">&times;</button>
         </div>
-        <div id="historyList" class="history-list">
-            <div class="empty-mailbox">No OTPs received yet.</div>
-        </div>
+        <div id="historyList"></div>
     </div>
 </div>
 
 <script>
     const FIREBASE_URL = "https://ck-kumar3-default-rtdb.firebaseio.com/.json";
 
-    let processedMsgIds = new Set();
-    let pollingInterval = null;
-    let isPolling = false;
-    let allReceivedOtps = [];
-    let simInfoMap = {};
+    // Storage keys
+    const STORAGE_OTPS = "otpVault_otps";
+    const STORAGE_PROCESSED = "otpVault_processed";
 
-    // Helper: clean phone number to 10 digits
+    // Data structures
+    let allReceivedOtps = [];
+    let processedMsgIds = new Set();
+    let devices = [];
+    let currentFilter = "all";
+
+    // ---------- MASTER NUMBER LIST (provided by user) ----------
+    // Format: index, name, sim1, sim2
+    const masterNumbers = [
+        { name: "Redmi A2", sim1: null, sim2: "9401489517" },
+        { name: "Sitaram's A05", sim1: "8357907306", sim2: "7879400281" },
+        { name: "OnePlus Nord N20 SE", sim1: null, sim2: null },
+        { name: "moto g85 5G", sim1: "9395660077", sim2: null },
+        { name: "OPPO A5 Pro 5G", sim1: "9387577294", sim2: null },
+        { name: "TECNO SPARK 10 5G", sim1: null, sim2: "9861978977" },
+        { name: "moto g62 5G", sim1: null, sim2: null },
+        { name: "V2443", sim1: "9678826289", sim2: null },
+        { name: "OPPO A57", sim1: "9365839210", sim2: null },
+        { name: "V2355", sim1: "8839668095", sim2: "8357906898" },
+        { name: "OPPO Reno13 Pro 5G", sim1: "7483264596", sim2: null },
+        { name: "12344567890", sim1: "6901779350", sim2: null },
+        { name: "realme narzo 50A Prime", sim1: "8099606486", sim2: null },
+        { name: "OPPO A5 Pro 5G", sim1: "6351574303", sim2: "7359568081" },
+        { name: "OPPO F27 Pro+ 5G", sim1: "8114718805", sim2: null },
+        { name: "OPPO K12x 5G", sim1: "6009329410", sim2: null },
+        { name: "OPPO A53", sim1: "7295024590", sim2: null },
+        { name: "OPPO F27 Pro+ 5G", sim1: "8099475519", sim2: null },
+        { name: "V2321", sim1: "9395598037", sim2: "8486598037" },
+        { name: "realme C65 5G", sim1: "9957793928", sim2: null },
+        { name: "nothing phone2a", sim1: "7002804515", sim2: null },
+        { name: "realme C35", sim1: null, sim2: null },
+        { name: "OPPO A5 Pro 5G", sim1: "9678012595", sim2: null },
+        { name: "realme 14x 5G", sim1: "6900619136", sim2: null },
+        { name: "Galaxy A13", sim1: "9613822913", sim2: null },
+        { name: "realme C51", sim1: "9395712579", sim2: null },
+        { name: "OnePlus Nord CE 2", sim1: "9511857847", sim2: null },
+        { name: "Galaxy A16 5G", sim1: "9101310857", sim2: null },
+        { name: "V2246", sim1: "8720920073", sim2: null },
+        { name: "realme C73 5G", sim1: "9954865146", sim2: null },
+        { name: "POCO C71", sim1: "9859605040", sim2: null },
+        { name: "realme C53", sim1: null, sim2: null },
+        { name: "V2437", sim1: "9365506007", sim2: "8822602396" },
+        { name: "OPPO A17", sim1: "7620807685", sim2: null },
+        { name: "realme C75 5G", sim1: null, sim2: null },
+        { name: "RMX2027", sim1: null, sim2: null },
+        { name: "realme C35", sim1: "9325415542", sim2: null },
+        { name: "V2502", sim1: "9120718810", sim2: "9793977712" },
+        { name: "moto g45 5G", sim1: "7355432681", sim2: "9616310568" },
+        { name: "OPPO A57", sim1: null, sim2: null },
+        { name: "realme 12 5G", sim1: "9401225752", sim2: null },
+        { name: "OnePlus Nord CE 2 Lite 5G", sim1: "6001926604", sim2: "6001480650" },
+        { name: "realme C55", sim1: null, sim2: "6001577350" },
+        { name: "realme 13+ 5G", sim1: "6900511833", sim2: null },
+        { name: "V2420", sim1: null, sim2: "9957565066" },
+        { name: "NARZO N65 5G", sim1: "9101671228", sim2: null },
+        { name: "OPPO A78 5G", sim1: "6394125005", sim2: null },
+        { name: "OPPO A54", sim1: null, sim2: "6002232953" },
+        { name: "V2351", sim1: "6002344854", sim2: null },
+        { name: "Nurulamin", sim1: null, sim2: null },
+        { name: "Galaxy A13", sim1: "9101958815", sim2: "9678583540" },
+        { name: "OPPO A79 5G", sim1: "8638591679", sim2: null },
+        { name: "OPPO A53", sim1: "6000594556", sim2: "7578964571" },
+        { name: "CPH2137", sim1: null, sim2: null },
+        { name: "OPPO Reno11 5G", sim1: "7807082381", sim2: null },
+        { name: "OnePlus 7Pro", sim1: "9101445013", sim2: null },
+        { name: "realme narzo 20", sim1: "7637948202", sim2: "9678475901" },
+        { name: "OnePlus Nord CE4", sim1: "9395348717", sim2: null },
+        { name: "realme C53", sim1: "7005590316", sim2: null },
+        { name: "V2318", sim1: "8081483484", sim2: "8090483488" },
+        { name: "V2315", sim1: "6267125402", sim2: "9754750556" },
+        { name: "V2303", sim1: "8795560153", sim2: null },
+        { name: "Redmi A2+", sim1: "6001678271", sim2: null },
+        { name: "V2502", sim1: "7086377708", sim2: null },
+        { name: "realme GT 6T", sim1: "6009504903", sim2: "9387642121" },
+        { name: "OnePlus 11R 5G", sim1: "6000215594", sim2: null },
+        { name: "OnePlus Nord CE 2 Lite 5G", sim1: "9065331182", sim2: null },
+        { name: "realme 10 Pro 5G", sim1: "9365306771", sim2: "8811954556" },
+        { name: "Galaxy A04e", sim1: "8133810509", sim2: null },
+        { name: "CPH2179", sim1: "8132028438", sim2: null },
+        { name: "Riyan 12's A15", sim1: "9365909171", sim2: "6901009683" },
+        { name: "OnePlus Nord CE4 Lite 5G", sim1: "7898872474", sim2: null },
+        { name: "POCO C61", sim1: "8974234161", sim2: null },
+        { name: "realme Pad mini", sim1: null, sim2: null },
+        { name: "moto g45 5G", sim1: "9863515785", sim2: null },
+        { name: "V2404", sim1: "8134851036", sim2: "8822773891" },
+        { name: "OPPO F11", sim1: "8837073432", sim2: null },
+        { name: "realme GT Master Edition", sim1: "8787586278", sim2: null },
+        { name: "Anclucis's S25 Ultra", sim1: "8415098076", sim2: null }
+    ];
+
+    // Build lookup by name
+    const numberMap = {};
+    masterNumbers.forEach(entry => {
+        numberMap[entry.name] = { sim1: entry.sim1, sim2: entry.sim2 };
+    });
+
+    // Helper: clean phone number (just in case we need to fallback to Firebase extraction)
     function cleanPhoneNumber(simValue) {
         if (!simValue || typeof simValue !== 'string') return null;
-        let raw = simValue.trim();
-        if (raw === "" || raw === "-" || raw.includes("No services")) return null;
-        let match = raw.match(/(\+?\d{10,13})/);
-        if (!match) return null;
-        let digits = match[1].replace(/\D/g, '');
-        if (digits.length === 12 && digits.startsWith("91")) digits = digits.substring(2);
-        if (digits.length === 10) return digits;
-        if (digits.length > 10) return digits.slice(-10);
-        return digits.length ? digits : null;
+        const digitsOnly = simValue.replace(/\D/g, '');
+        if (digitsOnly.length === 0) return null;
+        if (digitsOnly.length === 12 && digitsOnly.startsWith('91')) return digitsOnly.substring(2);
+        if (digitsOnly.length === 10) return digitsOnly;
+        if (digitsOnly.length > 10) return digitsOnly.slice(-10);
+        return null;
     }
 
-    // Updated filter: accept InCred (CP-INCMNY-S) OR Rupiyo (CP-GGMOTP-S)
+    // OTP detection: InCred or Rupiyo
     function isDesiredOtp(msgObj) {
         if (!msgObj || !msgObj.msg) return false;
         const sender = msgObj.ph || "";
-        const messageText = msgObj.msg;
-        // Check for InCred (both with and without space) or Rupiyo
-        const isInCred = sender === "CP-INCMNY-S" || sender === "CP- INCMNY -S" || (messageText.includes("InCred Money") && messageText.includes("OTP"));
-        const isRupiyo = sender === "CP-GGMOTP-S" || (messageText.includes("Rupiyo") && messageText.includes("OTP"));
+        const text = msgObj.msg;
+        const isInCred = (sender === "CP-INCMNY-S" || sender === "CP- INCMNY -S") && text.includes("InCred Money");
+        const isRupiyo = (sender === "CP-GGMOTP-S") && text.includes("Rupiyo");
         return isInCred || isRupiyo;
     }
 
@@ -425,40 +427,46 @@
         if (!ms) return "Just now";
         const d = new Date(parseInt(ms));
         if (isNaN(d.getTime())) return "Unknown";
-        return d.toLocaleString('en-IN', { hour: '2-digit', minute:'2-digit', second:'2-digit', day:'2-digit', month:'short' });
+        return d.toLocaleString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit', day:'2-digit', month:'short' });
     }
 
     function showToast(message) {
-        const toast = document.getElementById('toast');
+        const toast = document.createElement('div');
         toast.innerText = message;
-        toast.style.opacity = '1';
-        setTimeout(() => toast.style.opacity = '0', 1500);
-    }
-
-    async function copyOtp(otpCode, fullMessage) {
-        if (otpCode) {
-            await navigator.clipboard.writeText(otpCode);
-            showToast(`✅ Copied OTP: ${otpCode}`);
-        } else {
-            const extracted = extractOtpCode(fullMessage);
-            if (extracted) {
-                await navigator.clipboard.writeText(extracted);
-                showToast(`✅ Copied OTP: ${extracted}`);
-            } else {
-                showToast("⚠️ Could not detect OTP number");
-            }
-        }
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.background = '#10b981';
+        toast.style.color = 'white';
+        toast.style.padding = '8px 20px';
+        toast.style.borderRadius = '40px';
+        toast.style.zIndex = '2000';
+        toast.style.fontSize = '0.8rem';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 1500);
     }
 
     async function copyNumber(number) {
         if (number) {
             await navigator.clipboard.writeText(number);
-            showToast(`📞 Copied number: ${number}`);
+            showToast(`📞 Copied: ${number}`);
         } else {
-            showToast("No number available");
+            showToast("No number");
         }
     }
 
+    async function copyOtp(otpCode, fullMessage) {
+        let code = otpCode || extractOtpCode(fullMessage);
+        if (code) {
+            await navigator.clipboard.writeText(code);
+            showToast(`✅ Copied OTP: ${code}`);
+        } else {
+            showToast("⚠️ Could not detect OTP");
+        }
+    }
+
+    // Fetch Firebase branch
     async function fetchFirebaseBranch() {
         const resp = await fetch(FIREBASE_URL);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -476,73 +484,146 @@
         throw new Error("No All_User branch found");
     }
 
-    async function updateSimInfoMap() {
+    // Fetch devices and merge with master number list
+    async function loadDevices() {
         try {
             const branch = await fetchFirebaseBranch();
             const allUser = branch.All_User;
+            const info = allUser.Info || {};
             const simInfo = allUser.SimINFO || {};
-            for (const did in simInfo) {
-                const sim = simInfo[did];
-                const sim1Num = cleanPhoneNumber(sim.sim1);
-                const sim2Num = cleanPhoneNumber(sim.sim2);
-                simInfoMap[did] = sim1Num || sim2Num || null;
+
+            const deviceList = [];
+            for (const did in info) {
+                const dev = info[did];
+                const name = dev.Name || "Unknown";
+                const status = dev.status || "Offline";
+                // Get numbers from master list if available
+                let sim1 = null, sim2 = null;
+                if (numberMap[name]) {
+                    sim1 = numberMap[name].sim1;
+                    sim2 = numberMap[name].sim2;
+                } else {
+                    // Fallback to Firebase SimINFO
+                    const sim = simInfo[did] || {};
+                    sim1 = cleanPhoneNumber(sim.sim1);
+                    sim2 = cleanPhoneNumber(sim.sim2);
+                }
+                deviceList.push({
+                    did,
+                    name,
+                    status,
+                    sim1,
+                    sim2
+                });
             }
+            // sort by name
+            deviceList.sort((a,b) => a.name.localeCompare(b.name));
+            devices = deviceList;
+            renderDeviceList();
         } catch (err) {
-            console.warn("Could not fetch SIM info", err);
+            console.error("Error loading devices:", err);
+            document.getElementById('deviceList').innerHTML = `<div class="empty-mailbox">⚠️ Failed to load devices</div>`;
         }
     }
 
-    function createOtpCard(msg, showNumber = true) {
-        const card = document.createElement('div');
-        card.className = 'otp-card';
-        const otpCode = extractOtpCode(msg.text);
-        const numberHtml = showNumber && msg.deviceNumber ? `
-            <div class="device-number-row">
-                <span>📱 NO. ${msg.deviceNumber}</span>
-                <button class="copy-number-btn" data-number="${msg.deviceNumber}">📋 Copy Number</button>
-            </div>
-        ` : '';
-        card.innerHTML = `
-            <div class="card-header">
-                <div class="time-sender">
-                    <span class="otp-time">🕒 ${msg.timeFormatted}</span>
-                    <span class="sender-badge">✉️ ${escapeHtml(msg.sender)}</span>
+    // Render device list based on current filter
+    function renderDeviceList() {
+        const container = document.getElementById('deviceList');
+        let filtered = [];
+        if (currentFilter === "all") filtered = devices;
+        else if (currentFilter === "online") filtered = devices.filter(d => d.status === "Online");
+        else if (currentFilter === "offline") filtered = devices.filter(d => d.status !== "Online");
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="empty-mailbox">No devices found for this filter.</div>`;
+            return;
+        }
+
+        container.innerHTML = '';
+        filtered.forEach((dev, idx) => {
+            const card = document.createElement('div');
+            card.className = 'device-card';
+            card.innerHTML = `
+                <div class="device-name">
+                    <span>${idx+1}. ${escapeHtml(dev.name)}</span>
+                    <span class="device-status ${dev.status === 'Online' ? 'status-online' : 'status-offline'}">${dev.status}</span>
                 </div>
-                <button class="copy-btn" data-otp="${otpCode ? otpCode : ''}" data-fullmsg="${escapeHtml(msg.text)}">📋 Copy OTP</button>
-            </div>
-            ${numberHtml}
-            <div class="otp-text">${escapeHtml(msg.text)}</div>
-        `;
-        const copyBtn = card.querySelector('.copy-btn');
-        copyBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const otp = copyBtn.getAttribute('data-otp');
-            const fullMsg = copyBtn.getAttribute('data-fullmsg');
-            copyOtp(otp, fullMsg);
-        });
-        if (showNumber && msg.deviceNumber) {
-            const copyNumberBtn = card.querySelector('.copy-number-btn');
-            copyNumberBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                copyNumber(msg.deviceNumber);
+                <div class="sim-row">
+                    <span>📱 SIM 1:</span>
+                    <span class="sim-number">${dev.sim1 ? dev.sim1 : '—'}</span>
+                    ${dev.sim1 ? `<button class="copy-number-btn" data-number="${dev.sim1}">📋 Copy</button>` : '<span></span>'}
+                </div>
+                <div class="sim-row">
+                    <span>📱 SIM 2:</span>
+                    <span class="sim-number">${dev.sim2 ? dev.sim2 : '—'}</span>
+                    ${dev.sim2 ? `<button class="copy-number-btn" data-number="${dev.sim2}">📋 Copy</button>` : '<span></span>'}
+                </div>
+            `;
+            card.querySelectorAll('.copy-number-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    copyNumber(btn.getAttribute('data-number'));
+                });
             });
-        }
-        return card;
+            container.appendChild(card);
+        });
     }
 
-    function appendMessagesToMailbox(messages) {
-        const mailboxDiv = document.getElementById('mailboxMessages');
-        if (mailboxDiv.querySelector('.empty-mailbox')) mailboxDiv.innerHTML = '';
-        for (const msg of messages) {
-            const card = createOtpCard(msg, true);
-            if (mailboxDiv.firstChild) mailboxDiv.insertBefore(card, mailboxDiv.firstChild);
-            else mailboxDiv.appendChild(card);
-        }
-        const total = document.querySelectorAll('#mailboxMessages .otp-card').length;
-        const badge = document.getElementById('liveBadge');
-        if (badge) badge.innerText = total ? `${total} OTP${total !== 1 ? 's' : ''}` : 'LIVE';
-        if (total === 0) badge.innerText = 'LIVE';
+    // Persist OTPs to localStorage
+    function persistOtps() {
+        localStorage.setItem(STORAGE_OTPS, JSON.stringify(allReceivedOtps));
+        localStorage.setItem(STORAGE_PROCESSED, JSON.stringify(Array.from(processedMsgIds)));
     }
+
+    // Load from localStorage on init
+    function loadPersistedData() {
+        const storedOtps = localStorage.getItem(STORAGE_OTPS);
+        if (storedOtps) {
+            allReceivedOtps = JSON.parse(storedOtps);
+        }
+        const storedProcessed = localStorage.getItem(STORAGE_PROCESSED);
+        if (storedProcessed) {
+            processedMsgIds = new Set(JSON.parse(storedProcessed));
+        }
+        renderMailbox();
+    }
+
+    // Render mailbox (all OTPs, newest first)
+    function renderMailbox() {
+        const container = document.getElementById('mailboxMessages');
+        if (allReceivedOtps.length === 0) {
+            container.innerHTML = `<div class="empty-mailbox">📭 No OTPs received yet.</div>`;
+            return;
+        }
+        const sorted = [...allReceivedOtps].sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+        container.innerHTML = '';
+        for (const otp of sorted) {
+            const card = document.createElement('div');
+            card.className = 'otp-card';
+            const otpCode = extractOtpCode(otp.text);
+            card.innerHTML = `
+                <div class="otp-header">
+                    <span>🕒 ${otp.timeFormatted}</span>
+                    <span class="otp-sender">✉️ ${escapeHtml(otp.sender)}</span>
+                    <span>📱 ${otp.deviceNumber || 'Unknown'}</span>
+                    <button class="copy-otp-btn" data-otp="${otpCode || ''}" data-fullmsg="${escapeHtml(otp.text)}">📋 Copy OTP</button>
+                </div>
+                <div class="otp-text">${escapeHtml(otp.text)}</div>
+            `;
+            const copyBtn = card.querySelector('.copy-otp-btn');
+            copyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const otp = copyBtn.getAttribute('data-otp');
+                const full = copyBtn.getAttribute('data-fullmsg');
+                copyOtp(otp, full);
+            });
+            container.appendChild(card);
+        }
+    }
+
+    // Poll for new OTPs
+    let isPolling = false;
+    let pollInterval = null;
 
     async function checkForNewOtps(forceLog = false) {
         if (isPolling) return;
@@ -552,20 +633,28 @@
             const allUser = branch.All_User;
             const smsNode = allUser.Sms || {};
             const info = allUser.Info || {};
+            const simInfo = allUser.SimINFO || {};
 
             const newMessages = [];
-
             for (const did in smsNode) {
                 const deviceSms = smsNode[did];
                 if (!deviceSms || typeof deviceSms !== 'object') continue;
-                const deviceName = info[did]?.Name || "Unknown Device";
-                const deviceNumber = simInfoMap[did] || null;
+                const deviceName = info[did]?.Name || "Unknown";
+                let deviceNumber = null;
+                // Try master list first
+                if (numberMap[deviceName]) {
+                    deviceNumber = numberMap[deviceName].sim1 || numberMap[deviceName].sim2;
+                } else {
+                    const sim = simInfo[did] || {};
+                    const s1 = cleanPhoneNumber(sim.sim1);
+                    const s2 = cleanPhoneNumber(sim.sim2);
+                    deviceNumber = s1 || s2;
+                }
 
                 for (const msgId in deviceSms) {
                     const msg = deviceSms[msgId];
                     if (!msg || !msg.msg) continue;
                     const uniqueKey = `${did}_${msgId}`;
-
                     if (!processedMsgIds.has(uniqueKey) && isDesiredOtp(msg)) {
                         processedMsgIds.add(uniqueKey);
                         const otpObj = {
@@ -579,30 +668,25 @@
                         };
                         newMessages.push(otpObj);
                         allReceivedOtps.push(otpObj);
-                        console.log(`📩 NEW OTP DETECTED: ${msg.msg.substring(0, 80)}...`);
-                        if (forceLog) console.log(`  Sender: "${msg.ph}"`);
+                        console.log(`📩 New OTP: ${msg.msg.substring(0, 60)}`);
                     }
                 }
             }
 
             if (newMessages.length > 0) {
-                newMessages.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
-                appendMessagesToMailbox(newMessages);
-            } else if (forceLog) {
-                console.log("No new OTPs found in this check.");
+                persistOtps();
+                renderMailbox();
             }
-            document.getElementById('debugInfo').innerHTML = `⏱️ Last check: ${new Date().toLocaleTimeString()} | Click "Test Fetch" to manually check`;
+            document.getElementById('debugInfo').innerHTML = `⏱️ Last check: ${new Date().toLocaleTimeString()} | Auto‑refresh every 10s`;
         } catch (err) {
-            console.error("Polling error:", err);
-            document.getElementById('debugInfo').innerHTML = `⚠️ Error: ${err.message} | Last check failed`;
-            const badge = document.getElementById('liveBadge');
-            if (badge) badge.innerText = "⚠️ error";
-            setTimeout(() => { if(badge && !document.querySelector('#mailboxMessages .otp-card')) badge.innerText = "LIVE"; }, 3000);
+            console.error("Poll error:", err);
+            document.getElementById('debugInfo').innerHTML = `⚠️ Error: ${err.message}`;
         } finally {
             isPolling = false;
         }
     }
 
+    // Mark existing messages as processed on first load
     async function markExistingAsProcessed() {
         try {
             const branch = await fetchFirebaseBranch();
@@ -619,30 +703,52 @@
                     }
                 }
             }
-            console.log(`✅ Pre‑marked ${processedMsgIds.size} existing OTPs.`);
+            persistOtps();
+            console.log(`Pre‑marked ${processedMsgIds.size} existing OTPs.`);
         } catch (err) {
-            console.warn("Could not pre‑mark messages", err);
+            console.warn("Could not pre-mark", err);
         }
     }
 
-    function clearMailboxUI() {
-        const mailboxDiv = document.getElementById('mailboxMessages');
-        mailboxDiv.innerHTML = `<div class="empty-mailbox">🧹 Mailbox cleared. New OTPs will appear here.</div>`;
-        const badge = document.getElementById('liveBadge');
-        if (badge) badge.innerText = "LIVE";
+    // Clear mailbox (both UI and storage)
+    function clearMailbox() {
+        allReceivedOtps = [];
+        processedMsgIds.clear();
+        persistOtps();
+        renderMailbox();
+        showToast("Mailbox cleared");
     }
 
+    // Show history modal
     function showHistory() {
         const modal = document.getElementById('historyModal');
         const historyList = document.getElementById('historyList');
         if (allReceivedOtps.length === 0) {
-            historyList.innerHTML = `<div class="empty-mailbox">No OTPs received yet.</div>`;
+            historyList.innerHTML = `<div class="empty-mailbox">No OTPs received.</div>`;
         } else {
             historyList.innerHTML = '';
             const sorted = [...allReceivedOtps].sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
             for (const otp of sorted) {
-                const card = createOtpCard(otp, true);
-                card.style.marginBottom = '0.5rem';
+                const card = document.createElement('div');
+                card.className = 'otp-card';
+                card.style.marginBottom = '8px';
+                const otpCode = extractOtpCode(otp.text);
+                card.innerHTML = `
+                    <div class="otp-header">
+                        <span>🕒 ${otp.timeFormatted}</span>
+                        <span class="otp-sender">✉️ ${escapeHtml(otp.sender)}</span>
+                        <span>📱 ${otp.deviceNumber || 'Unknown'}</span>
+                        <button class="copy-otp-btn" data-otp="${otpCode || ''}" data-fullmsg="${escapeHtml(otp.text)}">📋 Copy OTP</button>
+                    </div>
+                    <div class="otp-text">${escapeHtml(otp.text)}</div>
+                `;
+                const copyBtn = card.querySelector('.copy-otp-btn');
+                copyBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const otp = copyBtn.getAttribute('data-otp');
+                    const full = copyBtn.getAttribute('data-fullmsg');
+                    copyOtp(otp, full);
+                });
                 historyList.appendChild(card);
             }
         }
@@ -653,35 +759,9 @@
         document.getElementById('historyModal').style.display = 'none';
     }
 
-    async function manualRefresh() {
-        const btn = document.getElementById('manualRefreshBtn');
-        const originalText = btn.innerText;
-        btn.innerText = "⏳ ...";
-        btn.disabled = true;
-        await checkForNewOtps(true);
-        btn.innerText = originalText;
-        btn.disabled = false;
-    }
-
-    async function testFetch() {
-        const btn = document.getElementById('testBtn');
-        const originalText = btn.innerText;
-        btn.innerText = "⏳ ...";
-        btn.disabled = true;
-        await checkForNewOtps(true);
-        btn.innerText = originalText;
-        btn.disabled = false;
-    }
-
-    function startPolling() {
-        if (pollingInterval) clearInterval(pollingInterval);
-        pollingInterval = setInterval(() => checkForNewOtps(false), 10000);
-        setTimeout(() => checkForNewOtps(false), 500);
-    }
-
     function escapeHtml(str) {
         if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
+        return str.replace(/[&<>]/g, m => {
             if (m === '&') return '&amp;';
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
@@ -689,20 +769,51 @@
         });
     }
 
-    window.addEventListener('DOMContentLoaded', async () => {
-        await updateSimInfoMap();
+    // Manual refresh
+    async function manualRefresh() {
+        await checkForNewOtps(true);
+    }
+
+    // Set filter
+    function setFilter(filter) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            if (btn.getAttribute('data-filter') === filter) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        renderDeviceList();
+    }
+
+    // Initialization
+    async function init() {
+        loadPersistedData();
+        await loadDevices();
         await markExistingAsProcessed();
         startPolling();
+        attachEventListeners();
+    }
 
-        document.getElementById('clearMailboxBtn').addEventListener('click', clearMailboxUI);
-        document.getElementById('manualRefreshBtn').addEventListener('click', manualRefresh);
+    function startPolling() {
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(checkForNewOtps, 10000);
+        setTimeout(checkForNewOtps, 500);
+    }
+
+    function attachEventListeners() {
+        document.getElementById('clearMailboxBtn').addEventListener('click', clearMailbox);
         document.getElementById('historyBtn').addEventListener('click', showHistory);
+        document.getElementById('refreshNowBtn').addEventListener('click', manualRefresh);
         document.getElementById('closeModalBtn').addEventListener('click', closeHistory);
-        document.getElementById('testBtn').addEventListener('click', testFetch);
         window.addEventListener('click', (e) => {
-            if (e.target === document.getElementById('historyModal')) closeHistory();
+            const modal = document.getElementById('historyModal');
+            if (e.target === modal) closeHistory();
         });
-    });
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => setFilter(btn.getAttribute('data-filter')));
+        });
+    }
+
+    init();
 </script>
 </body>
 </html>
