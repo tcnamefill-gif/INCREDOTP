@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>InCred OTP Vault | Premium Mailbox</title>
+    <title>Multi OTP Vault | InCred + Rupiyo</title>
     <style>
         * {
             margin: 0;
@@ -342,8 +342,8 @@
 <div class="mailbox-vault">
     <div class="vault-header">
         <div class="title-section">
-            <h1>🔐 InCred OTP Vault</h1>
-            <p>Only new InCred Money OTPs · Auto‑refresh every 10s</p>
+            <h1>🔐 Multi OTP Vault</h1>
+            <p>InCred Money + Rupiyo App · Auto‑refresh every 10s</p>
         </div>
         <div class="badge-group">
             <div class="live-badge" id="liveBadge">LIVE</div>
@@ -354,7 +354,7 @@
     </div>
 
     <div class="mailbox-messages" id="mailboxMessages">
-        <div class="empty-mailbox">✨ Waiting for new InCred OTPs...<br>Sender: <strong>CP-INCMNY-S</strong></div>
+        <div class="empty-mailbox">✨ Waiting for new OTPs...<br>From: <strong>CP-INCMNY-S</strong> (InCred) & <strong>CP-GGMOTP-S</strong> (Rupiyo)</div>
     </div>
 
     <div class="debug-info" id="debugInfo">
@@ -391,6 +391,7 @@
     let allReceivedOtps = [];
     let simInfoMap = {};
 
+    // Helper: clean phone number to 10 digits
     function cleanPhoneNumber(simValue) {
         if (!simValue || typeof simValue !== 'string') return null;
         let raw = simValue.trim();
@@ -404,15 +405,15 @@
         return digits.length ? digits : null;
     }
 
-    // Enhanced filter: matches both sender variations and the content
-    function isInCredOtp(msgObj) {
+    // Updated filter: accept InCred (CP-INCMNY-S) OR Rupiyo (CP-GGMOTP-S)
+    function isDesiredOtp(msgObj) {
         if (!msgObj || !msgObj.msg) return false;
         const sender = msgObj.ph || "";
         const messageText = msgObj.msg;
-        // Accept any sender that contains "INCMNY" or exactly the known string, but content must have "OTP for InCred Money"
-        const senderMatch = sender === "CP-INCMNY-S" || sender === "CP- INCMNY -S" || sender.includes("INCMNY");
-        const contentMatch = messageText.includes("OTP for InCred Money");
-        return contentMatch && (senderMatch || true); // if content matches, treat as OTP (extra safety)
+        // Check for InCred (both with and without space) or Rupiyo
+        const isInCred = sender === "CP-INCMNY-S" || sender === "CP- INCMNY -S" || (messageText.includes("InCred Money") && messageText.includes("OTP"));
+        const isRupiyo = sender === "CP-GGMOTP-S" || (messageText.includes("Rupiyo") && messageText.includes("OTP"));
+        return isInCred || isRupiyo;
     }
 
     function extractOtpCode(text) {
@@ -565,13 +566,13 @@
                     if (!msg || !msg.msg) continue;
                     const uniqueKey = `${did}_${msgId}`;
 
-                    if (!processedMsgIds.has(uniqueKey) && isInCredOtp(msg)) {
+                    if (!processedMsgIds.has(uniqueKey) && isDesiredOtp(msg)) {
                         processedMsgIds.add(uniqueKey);
                         const otpObj = {
                             text: msg.msg,
                             timestamp: msg.date || Date.now(),
                             timeFormatted: formatTime(msg.date || Date.now()),
-                            sender: msg.ph || "CP-INCMNY-S",
+                            sender: msg.ph || "Unknown",
                             deviceName: deviceName,
                             deviceNumber: deviceNumber,
                             did: did
@@ -588,9 +589,8 @@
                 newMessages.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
                 appendMessagesToMailbox(newMessages);
             } else if (forceLog) {
-                console.log("No new InCred OTPs found in this check.");
+                console.log("No new OTPs found in this check.");
             }
-            // update last check time
             document.getElementById('debugInfo').innerHTML = `⏱️ Last check: ${new Date().toLocaleTimeString()} | Click "Test Fetch" to manually check`;
         } catch (err) {
             console.error("Polling error:", err);
@@ -613,13 +613,13 @@
                 if (deviceSms && typeof deviceSms === 'object') {
                     for (const msgId in deviceSms) {
                         const msg = deviceSms[msgId];
-                        if (msg && msg.msg && isInCredOtp(msg)) {
+                        if (msg && msg.msg && isDesiredOtp(msg)) {
                             processedMsgIds.add(`${did}_${msgId}`);
                         }
                     }
                 }
             }
-            console.log(`✅ Pre‑marked ${processedMsgIds.size} existing InCred OTPs.`);
+            console.log(`✅ Pre‑marked ${processedMsgIds.size} existing OTPs.`);
         } catch (err) {
             console.warn("Could not pre‑mark messages", err);
         }
