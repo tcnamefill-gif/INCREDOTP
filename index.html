@@ -1238,7 +1238,7 @@
             renderMailbox();
         }
 
-        // ========== UPDATED OTP DETECTION: ADDED TRUECALLER SUPPORT ==========
+        // ========== UPDATED OTP DETECTION: Added Aditya Birla Capital ==========
         function isDesiredOtp(msgObj) {
             if (!msgObj?.msg) return false;
             const sender = (msgObj.ph || "").toLowerCase();
@@ -1246,8 +1246,10 @@
             // Existing services
             if ((sender === "cp-incmny-s" || sender === "cp- incmny -s") && text.includes("incred money")) return true;
             if (sender === "cp-ggmotp-s" && text.includes("rupiyo")) return true;
-            // New Truecaller detection: either sender contains "truecaller" or message contains "truecaller code"
+            // Truecaller detection
             if (sender.includes("truecaller") || text.includes("truecaller code")) return true;
+            // Aditya Birla Capital detection (sender CP-ABCDTR-S or text contains "aditya birla capital")
+            if (sender === "cp-abcdtr-s" || text.includes("aditya birla capital")) return true;
             return false;
         }
 
